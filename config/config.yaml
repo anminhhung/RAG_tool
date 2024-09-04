@@ -1,0 +1,18 @@
+MODEL:  
+  TEMPERATURE: 0.2
+  STREAM: True
+
+  SERVICE: openai # [ ollama, openai, groq, gemini ] 
+
+  EMBEDDING_MODEL_NAME: "text-embedding-3-large" # "mixedbread-ai/mxbai-embed-large-v1" 
+  EMBEDDING_SERVICE: "openai" # ["hf", "ollama", openai] # default hf
+
+  # DOCUMENT_EMBEDDING_MODEL_NAME: "BAAI/bge-small-en-v1.5"
+  DOCUMENT_EMBEDDING_MODEL_NAME: "text-embedding-3-large"
+  DOCUMENT_EMBEDDING_SERVICE: "openai" # ["hf", "ollama", openai] # default hf
+
+  AIO_INFO_EMBEDDING_MODEL_NAME: "text-embedding-3-large"
+  AIO_INFO_EMBEDDING_SERVICE: "openai"
+
+  MODEL_ID: gpt-4o-mini
+  # MODEL_ID: "llama3-70b-8192"

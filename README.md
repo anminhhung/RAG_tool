@@ -5,8 +5,8 @@ To install this application, follow these steps:
 
 **1. Clone the repository:**
 ```bash
-git clone https://github.com/BachNgoH/AIO_Research_Assistant.git
-cd AIO_Research_Assistant
+git clone https://github.com/anminhhung/RAG_tool
+cd RAG_tool
 ```
 
 **2. (Optional) Create and activate a virtual environment:**

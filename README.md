@@ -41,7 +41,7 @@ git clone https://github.com/BachNgoH/AIO_Documents.git
 
 **Ingest data**
 ```bash
-python src/ingest/paper_ingest.py
+python src/ingest/document_ingest.py
 ```
 
 ### Start application

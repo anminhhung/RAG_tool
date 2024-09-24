@@ -1,0 +1,84 @@
+import logging
+from typing import Any, Dict, List
+from elasticsearch.helpers import bulk
+from elasticsearch import Elasticsearch
+from llama_index.core.bridge.pydantic import Field
+
+from src.schemas import DocumentMetadata
+
+logger = logging.getLogger(__name__)
+
+
+class ElasticSearch:
+
+    url: str = Field(..., description="Elastic Search URL")
+
+    def __init__(self, url: str, index_name: str):
+        self.es_client = Elasticsearch(url)
+        self.index_name = index_name
+        self.create_index()
+
+    def create_index(self):
+        index_settings = {
+            "settings": {
+                "analysis": {"analyzer": {"default": {"type": "english"}}},
+                "similarity": {"default": {"type": "BM25"}},
+                "index.queries.cache.enabled": False,  # Disable query cache
+            },
+            "mappings": {
+                "properties": {
+                    "content": {"type": "text", "analyzer": "english"},
+                    "contextualized_content": {"type": "text", "analyzer": "english"},
+                    "doc_id": {"type": "text", "index": False},
+                }
+            },
+        }
+        if not self.es_client.indices.exists(index=self.index_name):
+            self.es_client.indices.create(index=self.index_name, body=index_settings)
+            logger.info(f"Created index: {self.index_name}")
+
+    def index_documents(self, documents_metadata: list[DocumentMetadata]) -> bool:
+        actions = [
+            {
+                "_index": self.index_name,
+                "_source": {
+                    "doc_id": metadata.doc_id,
+                    "content": metadata.original_content,
+                    "contextualized_content": metadata.contextualized_content,
+                },
+            }
+            for metadata in documents_metadata
+        ]
+
+        success, _ = bulk(self.es_client, actions)
+        if success:
+            logger.info("Indexed documents successfully !")
+
+        self.es_client.indices.refresh(index=self.index_name)
+
+        return success
+
+    def search(self, query: str, k: int = 20) -> List[Dict[str, Any]]:
+        self.es_client.indices.refresh(
+            index=self.index_name
+        )  # Force refresh before each search
+        search_body = {
+            "query": {
+                "multi_match": {
+                    "query": query,
+                    "fields": ["content", "contextualized_content"],
+                }
+            },
+            "size": k,
+        }
+        response = self.es_client.search(index=self.index_name, body=search_body)
+
+        return [
+            {
+                "doc_id": hit["_source"]["doc_id"],
+                "content": hit["_source"]["content"],
+                "contextualized_content": hit["_source"]["contextualized_content"],
+                "score": hit["_score"],
+            }
+            for hit in response["hits"]["hits"]
+        ]

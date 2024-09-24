@@ -1,18 +1,39 @@
-MODEL:  
-  TEMPERATURE: 0.2
-  STREAM: True
+MODEL:
+    TEMPERATURE: 0.2
+    STREAM: True
 
-  SERVICE: openai # [ ollama, openai, groq, gemini ] 
+    SERVICE: openai # [ ollama, openai, groq, gemini ]
 
-  EMBEDDING_MODEL_NAME: "text-embedding-3-large" # "mixedbread-ai/mxbai-embed-large-v1" 
-  EMBEDDING_SERVICE: "openai" # ["hf", "ollama", openai] # default hf
+    EMBEDDING_MODEL_NAME: "text-embedding-3-large" # "mixedbread-ai/mxbai-embed-large-v1"
+    EMBEDDING_SERVICE: "openai" # ["hf", "ollama", openai] # default hf
 
-  # DOCUMENT_EMBEDDING_MODEL_NAME: "BAAI/bge-small-en-v1.5"
-  DOCUMENT_EMBEDDING_MODEL_NAME: "text-embedding-3-large"
-  DOCUMENT_EMBEDDING_SERVICE: "openai" # ["hf", "ollama", openai] # default hf
+    # DOCUMENT_EMBEDDING_MODEL_NAME: "BAAI/bge-small-en-v1.5"
+    DOCUMENT_EMBEDDING_MODEL_NAME: "text-embedding-3-large"
+    DOCUMENT_EMBEDDING_SERVICE: "openai" # ["hf", "ollama", openai] # default hf
 
-  AIO_INFO_EMBEDDING_MODEL_NAME: "text-embedding-3-large"
-  AIO_INFO_EMBEDDING_SERVICE: "openai"
+    AIO_INFO_EMBEDDING_MODEL_NAME: "text-embedding-3-large"
+    AIO_INFO_EMBEDDING_SERVICE: "openai"
 
-  MODEL_ID: gpt-4o-mini
-  # MODEL_ID: "llama3-70b-8192"
+    MODEL_ID: gpt-4o-mini
+    # MODEL_ID: "llama3-70b-8192"
+
+CONTEXTUAL_RAG:
+    CHUNK_SIZE: 2048
+    SERVICE: openai
+    MODEL: "gpt-4o-mini"
+
+    ORIGIN_RAG_COLLECTION_NAME: "original_rag"
+    CONTEXTUAL_RAG_COLLECTION_NAME: "contextual_rag"
+
+    QDRANT_HOST: "localhost"
+    QDRANT_PORT: 6333
+
+    ELASTIC_SEARCH_URL: "http://localhost:9200"
+    ELASTIC_SEARCH_INDEX_NAME: "contextual_rag"
+
+    NUM_CHUNKS_TO_RECALL: 150
+
+    SEMANTIC_WEIGHT: 0.8
+    BM25_WEIGHT: 0.2
+
+    TOP_N: 3

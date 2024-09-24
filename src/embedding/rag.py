@@ -32,13 +32,13 @@ from llama_index.core import (
 from src.constants import CONTEXTUAL_PROMPT
 from src.embedding.elastic_search import ElasticSearch
 from src.schemas import RAGType, DocumentMetadata
-from src.settings import Settings as ConfigSettings, setting
+from src.settings import Settings as ConfigSettings, setting as config_setting
 from src.readers.paper_reader import llama_parse_read_paper
 
 load_dotenv()
 ic.configureOutput(includeContext=True, prefix="DEBUG - ")
 
-Settings.chunk_size = setting.chunk_size
+Settings.chunk_size = config_setting.chunk_size
 
 
 class RAG:

@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from src.db import RAG
+from src.embedding import RAG
 from src.settings import setting
 
 

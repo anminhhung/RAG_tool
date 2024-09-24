@@ -1,7 +1,7 @@
 import argparse
 import threading
 from src.settings import setting
-from src.db import RAG
+from src.embedding import RAG
 
 GREEN = "\033[92m"
 RESET = "\033[0m"

@@ -30,7 +30,7 @@ from llama_index.core import (
 )
 
 from src.constants import CONTEXTUAL_PROMPT
-from src.db.elastic_search import ElasticSearch
+from src.embedding.elastic_search import ElasticSearch
 from src.schemas import RAGType, DocumentMetadata
 from src.settings import Settings as ConfigSettings, setting
 from src.readers.paper_reader import llama_parse_read_paper
@@ -412,7 +412,11 @@ class RAG:
                 score += bm25_weight * (1 / (index + 1))
 
                 if content == "":
-                    content = bm25_results[index]["content"]
+                    content = (
+                        bm25_results[index].contextualized_content
+                        + "\n\n"
+                        + bm25_results[index].content
+                    )
 
             combined_nodes.append(
                 NodeWithScore(

@@ -11,7 +11,18 @@ from llama_index.core import SimpleDirectoryReader
 load_dotenv()
 
 
-def gemini_read_paper_content(paper_dir: Path | str, save_dir: Path | str = "output"):
+def gemini_read_paper_content(
+    paper_dir: Path | str, save_dir: Path | str = "output"
+) -> list[Document]:
+    """
+    Read the content of the paper using the Gemini.
+
+    Args:
+        paper_dir (str | Path): Path to the directory containing the papers
+        save_dir (str | Path): Path to the directory to save the extracted content
+    Returns:
+        list[Document]: List of documents from all papers.
+    """
     paper_dir = Path(paper_dir)
 
     save_dir = Path(save_dir)
@@ -20,7 +31,7 @@ def gemini_read_paper_content(paper_dir: Path | str, save_dir: Path | str = "out
     paper_file = [str(file) for file in paper_dir.glob("*.pdf")]
     model = genai.GenerativeModel("gemini-1.5-flash")
 
-    documents = []
+    documents: list[Document] = []
 
     for file in tqdm(paper_file):
         assert isinstance(file, str)
@@ -44,10 +55,16 @@ def gemini_read_paper_content(paper_dir: Path | str, save_dir: Path | str = "out
     return documents
 
 
-def gemini_read_paper_content_single_file(file_path: Path | str):
-    model = genai.GenerativeModel("gemini-1.5-flash")
+def gemini_read_paper_content_single_file(file_path: Path | str) -> Document:
+    """
+    Read the content of one paper using the Gemini.
 
-    assert isinstance(file_path, str)
+    Args:
+        file_path (str | Path): Path to the paper file
+    Returns:
+        Document: Document object from the paper.
+    """
+    model = genai.GenerativeModel("gemini-1.5-flash")
 
     pdf_file = genai.upload_file(file_path)
     response = model.generate_content(
@@ -60,11 +77,19 @@ def gemini_read_paper_content_single_file(file_path: Path | str):
     return Document(text=response.text)
 
 
-def llama_parse_read_paper(paper_dir: Path | str, save_dir: Path | str = "output"):
+def llama_parse_read_paper(paper_dir: Path | str) -> list[Document]:
+    """
+    Read the content of the paper using  LlamaParse.
+
+    Args:
+        paper_dir (str | Path): Path to the directory all containing the papers.
+    Returns:
+        list[Document]: List of documents from all papers.
+    """
+    ic(paper_dir)
+
     paper_dir = Path(paper_dir)
 
-    save_dir = Path(save_dir)
-    save_dir.mkdir(exist_ok=True, parents=True)
     parser = LlamaParse(
         result_type="markdown", api_key=os.getenv("LLAMA_PARSE_API_KEY")
     )
@@ -76,10 +101,20 @@ def llama_parse_read_paper(paper_dir: Path | str, save_dir: Path | str = "output
         input_dir=paper_dir, file_extractor=file_extractor, exclude=[".keep"]
     ).load_data(show_progress=True)
 
+    ic(len(documents))
+
     return documents
 
 
 def llama_parse_single_file(file_path: Path | str) -> Document:
+    """
+    Read the content of one paper using LlamaParse.
+
+    Args:
+        file_path (str | Path): Path to the paper file.
+    Returns:
+        Document: Document object from the paper.
+    """
     parser = LlamaParse(
         result_type="markdown", api_key=os.getenv("LLAMA_PARSE_API_KEY")
     )

@@ -18,6 +18,25 @@ from src.constants import (
 
 
 class Settings(BaseModel):
+    """
+    Settings for the contextual RAG.
+
+    Attributes:
+        chunk_size (int): Default chunk size
+        service (str): The LLM service, e.g., "openai"
+        model (str): The LLM model name, e.g., "gpt-4o-mini"
+        original_rag_collection_name (str): The original RAG collection name
+        contextual_rag_collection_name (str): The contextual RAG collection name
+        qdrant_host (str): The Qdrant host
+        qdrant_port (int): The Qdrant port
+        elastic_search_url (str): The ElasticSearch URL
+        elastic_search_index_name (str): The ElasticSearch index name
+        num_chunks_to_recall (int): The number of chunks to recall
+        semantic_weight (float): The semantic weight
+        bm25_weight (float): The BM25 weight
+        top_n (int): Top n documents after reranking
+    """
+
     chunk_size: int = Field(description="The chunk size", default=CONTEXTUAL_CHUNK_SIZE)
 
     service: str = Field(description="The LLM service", default=CONTEXTUAL_SERVICE)

@@ -1,16 +1,15 @@
 import os
 import sys
 import uuid
-import logging
 from tqdm import tqdm
+from icecream import ic
 from pathlib import Path
 from typing import Literal
 from dotenv import load_dotenv
 
 sys.path.append(str(Path(Path(__file__)).parent.parent.parent))
 
-import qdrant_client
-from llama_index.core import QueryBundle
+from qdrant_client import QdrantClient
 from llama_index.llms.openai import OpenAI
 from llama_index.core.llms import ChatMessage
 from llama_index.core.schema import NodeWithScore, Node
@@ -20,8 +19,15 @@ from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.postprocessor.cohere_rerank import CohereRerank
+from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.node_parser import SemanticSplitterNodeParser
-from llama_index.core import VectorStoreIndex, StorageContext, Document, Settings
+from llama_index.core import (
+    Settings,
+    Document,
+    QueryBundle,
+    StorageContext,
+    VectorStoreIndex,
+)
 
 from src.constants import CONTEXTUAL_PROMPT
 from src.db.elastic_search import ElasticSearch
@@ -30,14 +36,32 @@ from src.settings import Settings as ConfigSettings, setting
 from src.readers.paper_reader import llama_parse_read_paper
 
 load_dotenv()
-logger = logging.getLogger(__name__)
+ic.configureOutput(includeContext=True, prefix="DEBUG - ")
 
 Settings.chunk_size = setting.chunk_size
 
 
 class RAG:
+    """
+    Retrieve and Generate (RAG) class to handle the indexing and searching of both Origin and Contextual RAG.
+    """
+
+    setting: ConfigSettings
+    llm: OpenAI
+    splitter: SemanticSplitterNodeParser
+    es: ElasticSearch
+    qdrant_client: QdrantClient
+
     def __init__(self, setting: ConfigSettings):
+        """
+        Initialize the RAG class with the provided settings.
+
+        Args:
+            setting (ConfigSettings): The settings for the RAG.
+        """
         self.setting = setting
+        ic(setting)
+
         embed_model = OpenAIEmbedding()
         Settings.embed_model = embed_model
 
@@ -52,7 +76,7 @@ class RAG:
             url=setting.elastic_search_url, index_name=setting.elastic_search_index_name
         )
 
-        self.qdrant_client = qdrant_client.QdrantClient(
+        self.qdrant_client = QdrantClient(
             host=setting.qdrant_host, port=setting.qdrant_port
         )
 
@@ -60,24 +84,51 @@ class RAG:
         self,
         document: Document | list[Document],
         show_progress: bool = True,
-    ) -> list[Document]:
+    ) -> list[list[Document]]:
+        """
+        Split the document into chunks.
+
+        Args:
+            document (Document | list[Document]): The document to split.
+            show_progress (bool): Show the progress bar.
+
+        Returns:
+            list[list[Document]]: List of documents after splitting.
+        """
         if isinstance(document, Document):
             document = [document]
 
-        nodes = self.splitter.get_nodes_from_documents(
-            document, show_progress=show_progress
-        )
+        assert isinstance(document, list)
 
-        return [Document(text=node.get_content()) for node in nodes]
+        documents: list[list[Document]] = []
+
+        document = tqdm(document, desc="Splitting...") if show_progress else document
+
+        for doc in document:
+            nodes = self.splitter.get_nodes_from_documents([doc])
+            documents.append([Document(text=node.get_content()) for node in nodes])
+
+        return documents
 
     def add_contextual_content(
         self,
-        single_document: Document,
+        origin_document: Document,
+        splited_documents: list[Document],
     ) -> list[Document]:
-        whole_document = single_document.text
-        splited_documents = self.split_document(single_document)
+        """
+        Add contextual content to the splited documents.
+
+        Args:
+            origin_document (Document): The original document.
+            splited_documents (list[Document]): The splited documents from the original document.
+
+        Returns:
+            list[Document]: List of documents with contextual content.
+        """
+
+        whole_document = origin_document.text
         documents: list[Document] = []
-        documents_metadata: list[dict] = []
+        documents_metadata: list[DocumentMetadata] = []
 
         for chunk in splited_documents:
             messages = [
@@ -92,12 +143,14 @@ class RAG:
                     ),
                 ),
             ]
+
             response = self.llm.chat(messages)
             contextualized_content = response.message.content
 
             # Prepend the contextualized content to the chunk
             new_chunk = contextualized_content + "\n\n" + chunk.text
 
+            # Manually generate a doc_id for indexing in elastic search
             doc_id = str(uuid.uuid4())
             documents.append(
                 Document(
@@ -117,22 +170,37 @@ class RAG:
 
         return documents, documents_metadata
 
-    def get_contextual_documents(self, raw_documents: str | Path) -> list[Document]:
+    def get_contextual_documents(
+        self, raw_documents: list[Document], splited_documents: list[list[Document]]
+    ) -> tuple[list[Document], list[DocumentMetadata]]:
+        """
+        Get the contextual documents from the raw and splited documents.
+
+        Args:
+            raw_documents (list[Document]): List of raw documents.
+            splited_documents (list[list[Document]]): List of splited documents from the raw documents one by one.
+
+        Returns:
+            (tuple[list[Document], list[DocumentMetadata]]): Tuple of contextual documents and its metadata.
+        """
 
         documents: list[Document] = []
         documents_metadata: list[DocumentMetadata] = []
 
-        for raw_document in tqdm(raw_documents):
-            documents.extend(self.add_contextual_content(raw_document)[0])
-            documents_metadata.extend(self.add_contextual_content(raw_document)[1])
+        assert len(raw_documents) == len(splited_documents)
+
+        for raw_document, splited_document in tqdm(
+            zip(raw_documents, splited_documents),
+            desc="Adding contextual content ...",
+            total=len(raw_documents),
+        ):
+            document, metadata = self.add_contextual_content(
+                raw_document, splited_document
+            )
+            documents.extend(document)
+            documents_metadata.extend(metadata)
 
         return documents, documents_metadata
-
-    def get_origin_documents(self, raw_documents: list[Document]) -> list[Document]:
-
-        documents = self.split_document(raw_documents)
-
-        return documents
 
     def ingest_data(
         self,
@@ -140,11 +208,22 @@ class RAG:
         show_progress: bool = True,
         type: Literal["origin", "contextual"] = "contextual",
     ):
+        """
+        Ingest the data to the QdrantVectorStore.
+
+        Args:
+            documents (list[Document]): List of documents to ingest.
+            show_progress (bool): Show the progress bar.
+            type (Literal["origin", "contextual"]): The type of RAG to ingest.
+        """
+        ic(f"Indexing {type} data...")
+
         if type == "origin":
             collection_name = self.setting.original_rag_collection_name
         else:
             collection_name = self.setting.contextual_rag_collection_name
-        logger.info("Collection name: %s", collection_name)
+
+        ic(collection_name)
 
         vector_store = QdrantVectorStore(
             client=self.qdrant_client, collection_name=collection_name
@@ -156,11 +235,23 @@ class RAG:
             documents, storage_context=storage_context, show_progress=show_progress
         )
 
-        return index
+        ic(f"Indexed: {type} !!!")
+
+        return index  # noqa
 
     def get_qdrant_vector_store_index(
-        self, client: qdrant_client.QdrantClient, collection_name: str
-    ):
+        self, client: QdrantClient, collection_name: str
+    ) -> VectorStoreIndex:
+        """
+        Get the QdrantVectorStoreIndex from the QdrantVectorStore.
+
+        Args:
+            client (QdrantClient): The Qdrant client.
+            collection_name (str): The collection name.
+
+        Returns:
+            VectorStoreIndex: The VectorStoreIndex from the QdrantVectorStore.
+        """
         vector_store = QdrantVectorStore(client=client, collection_name=collection_name)
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
@@ -168,7 +259,19 @@ class RAG:
             vector_store=vector_store, storage_context=storage_context
         )
 
-    def get_query_engine(self, type: Literal["origin", "contextual", "both"]):
+    def get_query_engine(
+        self, type: Literal["origin", "contextual", "both"]
+    ) -> BaseQueryEngine | dict[str, BaseQueryEngine]:
+        """
+        Get the query engine for the RAG.
+
+        Args:
+            type (Literal["origin", "contextual", "both"]): The type of RAG.
+
+        Returns:
+            BaseQueryEngine | dict[str, BaseQueryEngine]: The query engine.
+        """
+
         if type == RAGType.ORIGIN:
             return self.get_qdrant_vector_store_index(
                 client=self.qdrant_client,
@@ -197,42 +300,71 @@ class RAG:
         self,
         folder_dir: str | Path,
         type: Literal["origin", "contextual", "both"] = "contextual",
-    ):
-        raw_documents = llama_parse_read_paper(folder_dir)
+    ) -> None:
+        """
+        Run the ingest process for the RAG.
 
-        if type == RAGType.BOTH:
-            origin_documents = self.get_origin_documents(raw_documents=raw_documents)
-            contextual_documents, documents_metadata = self.get_contextual_documents(
-                raw_documents=raw_documents
+        Args:
+            folder_dir (str | Path): The folder directory containing the papers.
+            type (Literal["origin", "contextual", "both"]): The type to ingest. Default to `contextual`.
+        """
+        raw_documents = llama_parse_read_paper(folder_dir)
+        splited_documents = self.split_document(raw_documents)
+
+        ingest_documents: list[Document] = []
+        if type == RAGType.BOTH or type == RAGType.ORIGIN:
+            for each_splited in splited_documents:
+                ingest_documents.extend(each_splited)
+
+        if type == RAGType.ORIGIN:
+            self.ingest_data(ingest_documents, type=RAGType.ORIGIN)
+
+        else:
+            if type == RAGType.BOTH:
+                self.ingest_data(ingest_documents, type=RAGType.ORIGIN)
+
+            contextual_documents, contextual_documents_metadata = (
+                self.get_contextual_documents(
+                    raw_documents=raw_documents, splited_documents=splited_documents
+                )
             )
 
-            self.ingest_data(origin_documents, type=RAGType.ORIGIN)
+            assert len(contextual_documents) == len(contextual_documents_metadata)
+
             self.ingest_data(contextual_documents, type=RAGType.CONTEXTUAL)
 
-            self.es.index_documents(documents_metadata)
+            self.es.index_documents(contextual_documents_metadata)
 
-            logger.info("Ingested data for both origin and contextual")
-        else:
-            if type == RAGType.ORIGIN:
-                documents = self.get_origin_documents(raw_documents=raw_documents)
-            else:
-                documents, documents_metadata = self.get_contextual_documents(
-                    raw_documents=raw_documents
-                )
+            ic(f"Ingested data for {type}")
 
-            self.ingest_data(documents, type=type)
+    def origin_rag_search(self, query: str) -> str:
+        """
+        Search the query in the Origin RAG.
 
-            if type == RAGType.CONTEXTUAL:
-                # Elastic search indexing
-                self.es.index_documents(documents_metadata)
+        Args:
+            query (str): The query to search.
 
-            logger.info(f"Ingested data for {type}")
+        Returns:
+            str: The search results.
+        """
+        ic(query)
 
-    def origin_rag_search(self, query: str):
         index = self.get_query_engine(RAGType.ORIGIN)
         return index.query(query)
 
-    def contextual_rag_search(self, query: str, k: int = 150):
+    def contextual_rag_search(self, query: str, k: int = 150) -> str:
+        """
+        Search the query with the Contextual RAG.
+
+        Args:
+            query (str): The query to search.
+            k (int): The number of documents to return. Default to `150`.
+
+        Returns:
+            str: The search results.
+        """
+        ic(query)
+
         semantic_weight = self.setting.semantic_weight
         bm25_weight = self.setting.bm25_weight
 
@@ -261,7 +393,7 @@ class RAG:
 
         bm25_results = self.es.search(query, k=k)
 
-        bm25_doc_id = [result["doc_id"] for result in bm25_results]
+        bm25_doc_id = [result.doc_id for result in bm25_results]
 
         combined_nodes: list[NodeWithScore] = []
 

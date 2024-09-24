@@ -1,4 +1,12 @@
-# Base RAG tool
+## Base RAG tool
+
+### Table of Contents
+
+1. [**Installation**](#installation)
+
+2. [**PaperAgent**](#data-ingestion)
+
+3. [**Contextual RAG**](#contextual-rag-for-papers-understanding)
 
 ### Installation
 
@@ -27,10 +35,15 @@ python -m venv venv
 .\venv\Scripts\activate
 ```
 
+> Note: Please downgrade to `python3.11` if any conflicts occur.
+
 **3. Install the required dependencies:**
 
 ```bash
+# Run this only for testing contextual RAG
 pip install -r requirements.txt
+
+# Optional
 pip install sentence-transformers
 pip install -U llama-index llama-index-llms-openai
 pip install -U llama-index-vector-stores-chroma
@@ -71,6 +84,8 @@ streamlit run streamlit_ui.py
 bash scripts/download_papers.sh
 ```
 
+> Note: You can add more .pdf papers to `papers` folder
+
 #### Run database
 
 ```bash
@@ -83,8 +98,23 @@ docker compose up -d
 bash scripts/contextual_rag_ingest.sh
 ```
 
+> Note: Please refer to [scripts/contextual_rag_ingest.sh](scripts/contextual_rag_ingest.sh) to change the papers dir.
+
 #### Run demo
 
 ```bash
-python demo_contextual_rag.py --q "What are two Types Learnable Text Prompt ?" --compare
+python demo_contextual_rag.py --q "What is ChainBuddy ?" --compare
+```
+
+#### Example Usage:
+
+```python
+from src.db import RAG
+from src.settings import setting
+
+rag = RAG(setting)
+
+q = "What is ChainBuddy ?"
+
+print(rag.contextual_rag_search(q))
 ```

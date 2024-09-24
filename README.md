@@ -109,7 +109,7 @@ python demo_contextual_rag.py --q "What is ChainBuddy ?" --compare
 #### Example Usage:
 
 ```python
-from src.db import RAG
+from src.embedding import RAG
 from src.settings import setting
 
 rag = RAG(setting)

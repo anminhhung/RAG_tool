@@ -155,8 +155,6 @@ def parse_multiple_file(files_or_folder: list[str] | str) -> list[Document]:
 
     ic(valid_files)
 
-    # parser = PDFThumbnailReader()
-
     file_extractor = get_extractor()
 
     documents = SimpleDirectoryReader(

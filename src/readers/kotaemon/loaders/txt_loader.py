@@ -25,7 +25,7 @@ class TxtReader(BaseReader):
         with open(file_path, "r", encoding="utf-8") as f:
             text = f.read()
 
-        text = split_text(text, max_words_per_page=self.max_words_per_page)
+        texts = split_text(text, max_tokens=self.max_words_per_page)
 
         metadata = extra_info or {}
-        return [Document(text=text, metadata=metadata)]
+        return [Document(text=t, metadata=metadata) for t in texts]

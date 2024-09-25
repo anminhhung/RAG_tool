@@ -123,6 +123,14 @@ bash scripts/contextual_rag_ingest.sh both sample/
 
 > Note: Please refer to [scripts/contextual_rag_ingest.sh](scripts/contextual_rag_ingest.sh) to change the files dir.
 
+#### Continuos Ingestion
+
+You can add more file paths or even folder paths:
+
+```bash
+python src/ingest/add_files.py --type both --files a.pdf b.docx docs/ ...
+```
+
 #### Run demo
 
 ```bash

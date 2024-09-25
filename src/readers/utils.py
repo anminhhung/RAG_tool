@@ -1,6 +1,8 @@
+import os
 import sys
 from icecream import ic
 from pathlib import Path
+from dotenv import load_dotenv
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
@@ -14,6 +16,8 @@ from llama_index.readers.file import (
     PandasExcelReader,
     UnstructuredReader,
 )
+
+load_dotenv()
 
 
 def check_valid_extenstion(file_path: str | Path) -> bool:
@@ -62,7 +66,9 @@ def get_files_from_folder_or_file_paths(files_or_folders: list[str]) -> list[str
 
 def get_extractor():
     return {
-        ".pdf": LlamaParse(result_type="markdown"),
+        ".pdf": LlamaParse(
+            result_type="markdown", api_key=os.getenv("LLAMA_PARSE_API_KEY")
+        ),
         ".docx": DocxReader(),
         ".html": UnstructuredReader(),
         ".csv": PandasCSVReader(pandas_config=dict(on_bad_lines="skip")),

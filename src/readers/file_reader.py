@@ -1,12 +1,17 @@
 import os
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
 from tqdm import tqdm
 from icecream import ic
-from pathlib import Path
 from dotenv import load_dotenv
 from llama_parse import LlamaParse
 import google.generativeai as genai
 from llama_index.core import Document
 from llama_index.core import SimpleDirectoryReader
+from .utils import get_files_from_folder_or_file_paths, get_extractor
 
 load_dotenv()
 
@@ -125,6 +130,35 @@ def llama_parse_single_file(file_path: Path | str) -> Document:
 
     documents = SimpleDirectoryReader(
         input_files=[file_path],
+        file_extractor=file_extractor,
+    ).load_data(show_progress=True)
+
+    return documents
+
+
+def parse_multiple_file(files_or_folder: list[str] | str) -> list[Document]:
+    """
+    Read the content of multiple papers.
+
+    Args:
+        files_or_folder (list[str] | str): List of file paths or folder paths containing the papers.
+    Returns:
+        list[Document]: List of documents from all papers.
+    """
+    if isinstance(files_or_folder, str):
+        files_or_folder = [files_or_folder]
+
+    valid_files = get_files_from_folder_or_file_paths(files_or_folder)
+
+    if len(valid_files) == 0:
+        raise ValueError("No valid files found.")
+
+    ic(valid_files)
+
+    file_extractor = get_extractor()
+
+    documents = SimpleDirectoryReader(
+        input_files=valid_files,
         file_extractor=file_extractor,
     ).load_data(show_progress=True)
 

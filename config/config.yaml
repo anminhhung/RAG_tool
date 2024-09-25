@@ -25,8 +25,7 @@ CONTEXTUAL_RAG:
     ORIGIN_RAG_COLLECTION_NAME: "original_rag"
     CONTEXTUAL_RAG_COLLECTION_NAME: "contextual_rag"
 
-    QDRANT_HOST: "localhost"
-    QDRANT_PORT: 6333
+    QDRANT_URL: "http://localhost:6333"
 
     ELASTIC_SEARCH_URL: "http://localhost:9200"
     ELASTIC_SEARCH_INDEX_NAME: "contextual_rag"

@@ -18,6 +18,9 @@ parser.add_argument(
     action="store_true",
     help="Compare the original RAG and the contextual RAG",
 )
+parser.add_argument(
+    "--debug", action="store_true", help="Run in debug mode for contextual search."
+)
 
 args = parser.parse_args()
 q = args.q
@@ -33,7 +36,7 @@ if args.compare:
         ),
         threading.Thread(
             target=lambda: print(
-                f"\n\n{GREEN}Contextual RAG: {RESET}{rag.contextual_rag_search(q)}"
+                f"\n\n{GREEN}Contextual RAG: {RESET}{rag.contextual_rag_search(q, debug=args.debug)}"
             )
         ),
     ]
@@ -44,4 +47,6 @@ if args.compare:
     for t in thread:
         t.join()
 else:
-    print(f"{GREEN}Contextual RAG: {RESET}{rag.contextual_rag_search(q)}")
+    print(
+        f"{GREEN}Contextual RAG: {RESET}{rag.contextual_rag_search(q, debug=args.debug)}"
+    )

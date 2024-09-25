@@ -86,7 +86,7 @@ After activating your environment, run this:
 bash scripts/contextual_rag_additional_installation.sh
 ```
 
-### Test
+#### Test
 
 You should run this to ensure all packages installed successfully !
 

@@ -118,7 +118,7 @@ CONTEXTUAL_RAG:
 #### Ingest data
 
 ```bash
-bash scripts/contextual_rag_ingest.sh both files/
+bash scripts/contextual_rag_ingest.sh both sample/
 ```
 
 > Note: Please refer to [scripts/contextual_rag_ingest.sh](scripts/contextual_rag_ingest.sh) to change the files dir.

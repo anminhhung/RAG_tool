@@ -33,5 +33,4 @@ html2text==2024.2.26
 llama-index-readers-web==0.1.23
 llama-index-readers-json==0.1.5
 unstructured==0.15.13
-python -c "import nltk; nltk.download('punkt_tab'); nltk.download('averaged_perceptron_tagger_eng')"
 python-magic-bin==0.4.14

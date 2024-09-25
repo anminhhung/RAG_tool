@@ -78,7 +78,7 @@ streamlit run streamlit_ui.py
 
 ### Contextual RAG
 
-### Additional Installation
+#### Additional Installation
 
 After activating your environment, run this:
 

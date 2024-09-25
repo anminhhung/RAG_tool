@@ -2,8 +2,7 @@ from llama_index.core.bridge.pydantic import Field, BaseModel
 
 from src.constants import (
     TOP_N,
-    QDRANT_HOST,
-    QDRANT_PORT,
+    QDRANT_URL,
     BM25_WEIGHT,
     SEMANTIC_WEIGHT,
     CONTEXTUAL_MODEL,
@@ -27,8 +26,7 @@ class Settings(BaseModel):
         model (str): The LLM model name, e.g., "gpt-4o-mini"
         original_rag_collection_name (str): The original RAG collection name
         contextual_rag_collection_name (str): The contextual RAG collection name
-        qdrant_host (str): The Qdrant host
-        qdrant_port (int): The Qdrant port
+        qdrant_url (str): The QdrantVectorDB URL
         elastic_search_url (str): The ElasticSearch URL
         elastic_search_index_name (str): The ElasticSearch index name
         num_chunks_to_recall (int): The number of chunks to recall
@@ -53,8 +51,7 @@ class Settings(BaseModel):
         default=CONTEXTUAL_RAG_COLLECTION_NAME,
     )
 
-    qdrant_host: str = Field(description="The Qdrant host", default=QDRANT_HOST)
-    qdrant_port: int = Field(description="The Qdrant port", default=QDRANT_PORT)
+    qdrant_url: str = Field(description="The QdrantVectorDB URL", default=QDRANT_URL)
 
     elastic_search_url: str = Field(
         description="The Elastic URL", default=ELASTIC_SEARCH_URL

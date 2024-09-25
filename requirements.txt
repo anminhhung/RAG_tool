@@ -9,7 +9,7 @@ llama-index-embeddings-huggingface==0.1.3
 llama-index-embeddings-ollama==0.1.2
 llama-index-tools-duckduckgo==0.1.0
 llama-index-vector-stores-chroma==0.1.5
-# vllm==0.4.1
+vllm==0.4.1
 fastapi==0.112.2
 easydict==1.9.0
 feedparser==6.0.11
@@ -24,3 +24,14 @@ llama-index-vector-stores-qdrant==0.2.17
 pydantic_settings==2.5.2
 llama-index-postprocessor-cohere-rerank==0.1.7
 elasticsearch==8.15.1
+langchain==0.3.0
+theflow==0.8.6
+PyMuPDF==1.24.10
+python-docx==1.1.2
+openpyxl==3.1.5
+html2text==2024.2.26
+llama-index-readers-web==0.1.23
+llama-index-readers-json==0.1.5
+unstructured==0.15.13
+python -c "import nltk; nltk.download('punkt_tab'); nltk.download('averaged_perceptron_tagger_eng')"
+python-magic-bin==0.4.14

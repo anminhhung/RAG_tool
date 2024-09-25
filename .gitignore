@@ -9,3 +9,4 @@ lib/*
 *.ipynb
 .env
 papers/
+.DS_Store

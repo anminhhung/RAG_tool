@@ -30,10 +30,10 @@ from llama_index.core import (
 )
 
 from src.constants import CONTEXTUAL_PROMPT
-from src.embedding.elastic_search import ElasticSearch
 from src.schemas import RAGType, DocumentMetadata
+from src.readers.file_reader import parse_multiple_file
+from src.embedding.elastic_search import ElasticSearch
 from src.settings import Settings as ConfigSettings, setting as config_setting
-from src.readers.paper_reader import llama_parse_read_paper
 
 load_dotenv()
 ic.configureOutput(includeContext=True, prefix="DEBUG - ")
@@ -77,7 +77,7 @@ class RAG:
         )
 
         self.qdrant_client = QdrantClient(
-            host=setting.qdrant_host, port=setting.qdrant_port
+            url=setting.qdrant_url,
         )
 
     def split_document(
@@ -239,6 +239,36 @@ class RAG:
 
         return index  # noqa
 
+    def insert_data(
+        self,
+        documents: list[Document],
+        show_progress: bool = True,
+        type: Literal["origin", "contextual"] = "contextual",
+    ):
+        ic(type)
+
+        if type == "origin":
+            collection_name = self.setting.original_rag_collection_name
+        else:
+            collection_name = self.setting.contextual_rag_collection_name
+
+        ic(collection_name)
+
+        vector_store_index = self.get_qdrant_vector_store_index(
+            client=self.qdrant_client,
+            collection_name=collection_name,
+        )
+
+        documents = (
+            tqdm(documents, desc=f"Adding more data to {type} ...")
+            if show_progress
+            else documents
+        )
+        for document in documents:
+            vector_store_index.insert(document)
+
+        ic(f"Added data to {type} !!!")
+
     def get_qdrant_vector_store_index(
         self, client: QdrantClient, collection_name: str
     ) -> VectorStoreIndex:
@@ -308,7 +338,7 @@ class RAG:
             folder_dir (str | Path): The folder directory containing the papers.
             type (Literal["origin", "contextual", "both"]): The type to ingest. Default to `contextual`.
         """
-        raw_documents = llama_parse_read_paper(folder_dir)
+        raw_documents = parse_multiple_file(folder_dir)
         splited_documents = self.split_document(raw_documents)
 
         ingest_documents: list[Document] = []
@@ -337,6 +367,45 @@ class RAG:
 
             ic(f"Ingested data for {type}")
 
+    def run_add_files(
+        self, files_or_folders: list[str], type: Literal["origin", "contextual", "both"]
+    ):
+        """
+        Add files to the database.
+
+        Args:
+            files_or_folders (list[str]): List of file paths or folder to be ingested.
+            type (Literal["origin", "contextual", "both"]): Type of RAG type to ingest.
+        """
+        raw_documents = parse_multiple_file(files_or_folders)
+        splited_documents = self.split_document(raw_documents)
+
+        ingest_documents: list[Document] = []
+        if type == RAGType.BOTH or type == RAGType.ORIGIN:
+            for each_splited in splited_documents:
+                ingest_documents.extend(each_splited)
+
+        if type == RAGType.ORIGIN:
+            self.insert_data(ingest_documents, type=RAGType.ORIGIN)
+
+        else:
+            if type == RAGType.BOTH:
+                self.insert_data(ingest_documents, type=RAGType.ORIGIN)
+
+            contextual_documents, contextual_documents_metadata = (
+                self.get_contextual_documents(
+                    raw_documents=raw_documents, splited_documents=splited_documents
+                )
+            )
+
+            assert len(contextual_documents) == len(contextual_documents_metadata)
+
+            self.insert_data(contextual_documents, type=RAGType.CONTEXTUAL)
+
+            self.es.index_documents(contextual_documents_metadata)
+
+            ic(f"Added data for {type}")
+
     def origin_rag_search(self, query: str) -> str:
         """
         Search the query in the Origin RAG.
@@ -352,13 +421,16 @@ class RAG:
         index = self.get_query_engine(RAGType.ORIGIN)
         return index.query(query)
 
-    def contextual_rag_search(self, query: str, k: int = 150) -> str:
+    def contextual_rag_search(
+        self, query: str, k: int = 150, debug: bool = False
+    ) -> str:
         """
         Search the query with the Contextual RAG.
 
         Args:
             query (str): The query to search.
             k (int): The number of documents to return. Default to `150`.
+            debug (bool): debug mode.
 
         Returns:
             str: The search results.
@@ -380,26 +452,26 @@ class RAG:
         query_engine = RetrieverQueryEngine(retriever=retriever)
 
         semantic_results: Response = query_engine.query(query)
-
-        nodes = semantic_results.source_nodes
-
-        semantic_doc_id = [node.metadata["doc_id"] for node in nodes]
+        semantic_doc_id = [
+            node.metadata["doc_id"] for node in semantic_results.source_nodes
+        ]
 
         def get_content_by_doc_id(doc_id: str):
-            for node in nodes:
+            for node in semantic_results.source_nodes:
                 if node.metadata["doc_id"] == doc_id:
                     return node.text
             return ""
 
         bm25_results = self.es.search(query, k=k)
-
         bm25_doc_id = [result.doc_id for result in bm25_results]
 
         combined_nodes: list[NodeWithScore] = []
-
         combined_ids = list(set(semantic_doc_id + bm25_doc_id))
 
         # Compute score according to: https://github.com/anthropics/anthropic-cookbook/blob/main/skills/contextual-embeddings/guide.ipynb
+        semantic_count = 0
+        bm25_count = 0
+        both_count = 0
         for id in combined_ids:
             score = 0
             content = ""
@@ -407,6 +479,8 @@ class RAG:
                 index = semantic_doc_id.index(id)
                 score += semantic_weight * (1 / (index + 1))
                 content = get_content_by_doc_id(id)
+                semantic_count += 1
+
             if id in bm25_doc_id:
                 index = bm25_doc_id.index(id)
                 score += bm25_weight * (1 / (index + 1))
@@ -417,6 +491,9 @@ class RAG:
                         + "\n\n"
                         + bm25_results[index].content
                     )
+                bm25_count += 1
+            if id in semantic_doc_id and id in bm25_doc_id:
+                both_count += 1
 
             combined_nodes.append(
                 NodeWithScore(
@@ -426,6 +503,9 @@ class RAG:
                     score=score,
                 )
             )
+
+        if debug:
+            ic(semantic_count, bm25_count, both_count)
 
         reranker = CohereRerank(
             top_n=self.setting.top_n,

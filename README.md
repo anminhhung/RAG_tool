@@ -6,7 +6,7 @@
 
 2. [**PaperAgent**](#data-ingestion)
 
-3. [**Contextual RAG**](#contextual-rag-for-papers-understanding)
+3. [**Contextual RAG**](#contextual-rag)
 
 ### Installation
 
@@ -76,15 +76,15 @@ streamlit run streamlit_ui.py
 
 ```
 
-### Contextual RAG for papers understanding
+### Contextual RAG
 
-#### Download papers
+### Additional Installation
+
+After activating your environment, run this:
 
 ```bash
-bash scripts/download_papers.sh
+bash scripts/contextual_rag_additional_installation.sh
 ```
-
-> Note: You can add more .pdf papers to `papers` folder
 
 #### Run database
 
@@ -92,18 +92,31 @@ bash scripts/download_papers.sh
 docker compose up -d
 ```
 
+#### Config URL for database
+
+In [config/config.yaml](./config/config.yaml), please modify urls of QdrantVectorDB and ElasticSearch:
+
+```yml
+...
+CONTEXTUAL_RAG:
+    ...
+    QDRANT_URL: <fill here>
+
+    ELASTIC_SEARCH_URL: <fill here>
+```
+
 #### Ingest data
 
 ```bash
-bash scripts/contextual_rag_ingest.sh
+bash scripts/contextual_rag_ingest.sh both files/
 ```
 
-> Note: Please refer to [scripts/contextual_rag_ingest.sh](scripts/contextual_rag_ingest.sh) to change the papers dir.
+> Note: Please refer to [scripts/contextual_rag_ingest.sh](scripts/contextual_rag_ingest.sh) to change the files dir.
 
 #### Run demo
 
 ```bash
-python demo_contextual_rag.py --q "What is ChainBuddy ?" --compare
+python demo_contextual_rag.py --q "Cái gì thất bại đề cử di sản thế giới ?" --compare --debug
 ```
 
 #### Example Usage:
@@ -114,7 +127,7 @@ from src.settings import setting
 
 rag = RAG(setting)
 
-q = "What is ChainBuddy ?"
+q = "Cái gì thất bại đề cử di sản thế giới ?"
 
 print(rag.contextual_rag_search(q))
 ```

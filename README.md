@@ -86,6 +86,16 @@ After activating your environment, run this:
 bash scripts/contextual_rag_additional_installation.sh
 ```
 
+### Test
+
+You should run this to ensure all packages installed successfully !
+
+```bash
+pip install pytest
+
+pytest tests/
+```
+
 #### Run database
 
 ```bash

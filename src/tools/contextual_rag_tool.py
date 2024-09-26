@@ -26,5 +26,6 @@ def load_contextual_rag_tool():
 
     return FunctionTool.from_defaults(
         fn=answer_query,
+        return_direct=True,
         description="A useful tool to answer queries of user using RAG.",
     )

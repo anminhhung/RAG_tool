@@ -97,6 +97,14 @@ Currently, we support:
 | `openai` | `OpenAIAgent` |
 | `react`  | `ReActAgent`  |
 
+**8. Setup API Keys:** Please create `.env` file and provide these API keys:
+
+|         NAME          |                     Where to get ?                      |
+| :-------------------: | :-----------------------------------------------------: |
+|   `OPENAI_API_KEY`    | [OpenAI Platform](https://platform.openai.com/api-keys) |
+| `LLAMA_PARSE_API_KEY` |    [LlamaCloud](https://cloud.llamaindex.ai/api-key)    |
+|   `COHERE_API_KEY`    |     [Cohere](https://dashboard.cohere.com/api-keys)     |
+
 ---
 
 ### **Ingest data (Examples)**

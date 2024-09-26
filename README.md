@@ -80,13 +80,13 @@ streamlit run streamlit_ui.py
 
 ### Additional Installation
 
-**1. After activating your environment, run:**
+-   **1. After activating your environment, run:**
 
 ```bash
 bash scripts/contextual_rag_additional_installation.sh
 ```
 
-**2. Test installation:**
+-   **2. Test installation:**
 
 -   You should run this to ensure all packages installed successfully !
 
@@ -96,15 +96,13 @@ pip install pytest
 pytest tests/
 ```
 
-**3. Run database**
+-   **3. Run database**
 
 ```bash
 docker compose up -d
 ```
 
-**4 Config URL for database**
-
--   In [config/config.yaml](./config/config.yaml), please modify urls of QdrantVectorDB and ElasticSearch:
+-   **4. Config URL for database**: In [config/config.yaml](./config/config.yaml), please modify urls of QdrantVectorDB and ElasticSearch:
 
 ```yml
 ...
@@ -125,7 +123,7 @@ bash scripts/contextual_rag_ingest.sh both sample/
 
 ### Continuos Ingestion
 
-You can add more file paths or even folder paths:
+-   You can add more file paths or even folder paths:
 
 ```bash
 python src/ingest/add_files.py --type both --files a.pdf b.docx docs/ ...

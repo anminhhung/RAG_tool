@@ -1,6 +1,6 @@
 ## Base RAG tool
 
-### Table of Contents
+## Table of Contents
 
 1. [**Installation**](#installation)
 
@@ -8,7 +8,7 @@
 
 3. [**Contextual RAG**](#contextual-rag)
 
-### Installation
+## Installation
 
 To install this application, follow these steps:
 
@@ -49,7 +49,7 @@ pip install -U llama-index llama-index-llms-openai
 pip install -U llama-index-vector-stores-chroma
 ```
 
-### Data Ingestion
+## Data Ingestion
 
 **Download data**
 
@@ -66,7 +66,7 @@ git clone https://github.com/BachNgoH/AIO_Documents.git
 python src/ingest/document_ingest.py
 ```
 
-### Start application
+## Start application
 
 ```bash
 # backend
@@ -76,19 +76,19 @@ streamlit run streamlit_ui.py
 
 ```
 
-### Contextual RAG
+## Contextual RAG
 
-#### Additional Installation
+### Additional Installation
 
-After activating your environment, run this:
+**1. After activating your environment, run:**
 
 ```bash
 bash scripts/contextual_rag_additional_installation.sh
 ```
 
-#### Test
+**2. Test installation:**
 
-You should run this to ensure all packages installed successfully !
+-   You should run this to ensure all packages installed successfully !
 
 ```bash
 pip install pytest
@@ -96,15 +96,15 @@ pip install pytest
 pytest tests/
 ```
 
-#### Run database
+**3. Run database**
 
 ```bash
 docker compose up -d
 ```
 
-#### Config URL for database
+**4 Config URL for database**
 
-In [config/config.yaml](./config/config.yaml), please modify urls of QdrantVectorDB and ElasticSearch:
+-   In [config/config.yaml](./config/config.yaml), please modify urls of QdrantVectorDB and ElasticSearch:
 
 ```yml
 ...
@@ -115,7 +115,7 @@ CONTEXTUAL_RAG:
     ELASTIC_SEARCH_URL: <fill here>
 ```
 
-#### Ingest data
+### Ingest data
 
 ```bash
 bash scripts/contextual_rag_ingest.sh both sample/
@@ -123,7 +123,7 @@ bash scripts/contextual_rag_ingest.sh both sample/
 
 > Note: Please refer to [scripts/contextual_rag_ingest.sh](scripts/contextual_rag_ingest.sh) to change the files dir.
 
-#### Continuos Ingestion
+### Continuos Ingestion
 
 You can add more file paths or even folder paths:
 
@@ -131,21 +131,82 @@ You can add more file paths or even folder paths:
 python src/ingest/add_files.py --type both --files a.pdf b.docx docs/ ...
 ```
 
-#### Run demo
+### File Readers
 
-```bash
-python demo_contextual_rag.py --q "Cái gì thất bại đề cử di sản thế giới ?" --compare --debug
+-   You can refer to: [here](./tests/test_loader.py) to see how to use each of them.
+
+| File extension |        Reader        |
+| :------------: | :------------------: |
+|     `.pdf`     |     `LlamaParse`     |
+|    `.docx`     |     `DocxReader`     |
+|    `.html`     | `UnstructuredReader` |
+|    `.json`     |     `JSONReader`     |
+|     `.csv`     |  `PandasCSVReader`   |
+|    `.xlsx`     | `PandasExcelReader`  |
+|     `.txt`     |     `TxtReader`      |
+
+-   Example usage of `LlamaParse`:
+
+```python
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+from llama_index.readers.llama_parse import LlamaParse
+
+load_dotenv()
+
+loader = LlamaParse(result_type="markdown", api_key=os.getenv("LLAMA_PARSE_API_KEY"))
+
+documents = loader.load_data(Path("sample/2409.13588v1.pdf"))
+
+...
 ```
 
-#### Example Usage:
+### Run demo
+
+-   1. Contextual RAG:
+
+```bash
+python demo/demo_contextual_rag.py --q "Cái gì thất bại đề cử di sản thế giới ?" --compare --debug
+```
+
+-   2. ContextualRagReactAgent:
+
+```bash
+python demo/demo_contextual_rag_react_agent.py --q "ChainBuddy là gì ?"
+```
+
+### Example Usage:
+
+-   **1. Contextual RAG**
 
 ```python
 from src.embedding import RAG
-from src.settings import setting
+from src.settings import Settings
+
+setting = Settings()
 
 rag = RAG(setting)
 
 q = "Cái gì thất bại đề cử di sản thế giới ?"
 
 print(rag.contextual_rag_search(q))
+```
+
+-   **2. ContextualRagReactAgent**
+
+```python
+from src.settings import Settings
+from src.agents.react_agent import ContextualRagReactAgent
+from src.tools.contextual_rag_tool import load_contextual_rag_tool
+
+setting = Settings()
+
+agent = ContextualRagReactAgent.from_tools(
+    setting=setting,
+    tools=[load_contextual_rag_tool()],
+    verbose=True,
+)
+
+print(agent.predict("ChainBuddy là gì ?"))
 ```

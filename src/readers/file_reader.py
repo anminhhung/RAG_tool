@@ -116,9 +116,9 @@ def llama_parse_single_file(file_path: Path | str) -> Document:
     Read the content of one paper using LlamaParse.
 
     Args:
-        file_path (str | Path): Path to the paper file.
+        file_path (str | Path): Path to the file.
     Returns:
-        Document: Document object from the paper.
+        Document: Document object.
     """
     parser = LlamaParse(
         result_type="markdown", api_key=os.getenv("LLAMA_PARSE_API_KEY")
@@ -136,14 +136,14 @@ def llama_parse_single_file(file_path: Path | str) -> Document:
     return documents
 
 
-def parse_multiple_file(files_or_folder: list[str] | str) -> list[Document]:
+def parse_multiple_files(files_or_folder: list[str] | str) -> list[Document]:
     """
-    Read the content of multiple papers.
+    Read the content of multiple files.
 
     Args:
-        files_or_folder (list[str] | str): List of file paths or folder paths containing the papers.
+        files_or_folder (list[str] | str): List of file paths or folder paths containing files.
     Returns:
-        list[Document]: List of documents from all papers.
+        list[Document]: List of documents from all files.
     """
     if isinstance(files_or_folder, str):
         files_or_folder = [files_or_folder]

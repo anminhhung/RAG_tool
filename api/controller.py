@@ -1,10 +1,9 @@
-from fastapi import APIRouter, Request, HTTPException
-from .service import AssistantService
-import asyncio
-from datetime import time
+from fastapi import APIRouter, Request
+from .service import ContextualRagReactAgent
 
 router = APIRouter()
-assistant = AssistantService()
+assistant = ContextualRagReactAgent()
+
 
 # --- API Endpoints ---
 @router.post("/complete")

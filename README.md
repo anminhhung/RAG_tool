@@ -1,14 +1,22 @@
-## Base RAG tool
+## **Base RAG tool**
 
-## Table of Contents
+![](./public/contextual_rag.png)
+
+## **Table of Contents**
 
 1. [**Installation**](#installation)
 
-2. [**PaperAgent**](#data-ingestion)
+2. [**Ingest Data**](#ingest-data-examples)
 
-3. [**Contextual RAG**](#contextual-rag)
+3. [**Continuous Ingestion**](#continuous-ingestion)
 
-## Installation
+4. [**Run Demo**](#run-demo)
+
+5. [**Example Usage**](#example-usage)
+
+6. [**Start Application**](#start-application)
+
+## **Installation**
 
 To install this application, follow these steps:
 
@@ -40,55 +48,16 @@ python -m venv venv
 **3. Install the required dependencies:**
 
 ```bash
-# Run this only for testing contextual RAG
 pip install -r requirements.txt
-
-# Optional
-pip install sentence-transformers
-pip install -U llama-index llama-index-llms-openai
-pip install -U llama-index-vector-stores-chroma
 ```
 
-## Data Ingestion
-
-**Download data**
-
--   Download demo data:
-
-```bash
-cd data
-git clone https://github.com/BachNgoH/AIO_Documents.git
-```
-
-**Ingest data**
-
-```bash
-python src/ingest/document_ingest.py
-```
-
-## Start application
-
-```bash
-# backend
-uvicorn app:app --reload
-# UI
-streamlit run streamlit_ui.py
-
-```
-
-## Contextual RAG
-
-### Additional Installation
-
--   **1. After activating your environment, run:**
+**4. After activating your environment, run:**
 
 ```bash
 bash scripts/contextual_rag_additional_installation.sh
 ```
 
--   **2. Test installation:**
-
--   You should run this to ensure all packages installed successfully !
+**(Optional) Verify installation:** You should run this to ensure all packages are installed successfully !
 
 ```bash
 pip install pytest
@@ -96,13 +65,13 @@ pip install pytest
 pytest tests/
 ```
 
--   **3. Run database**
+**5. Run database:**
 
 ```bash
 docker compose up -d
 ```
 
--   **4. Config URL for database**: In [config/config.yaml](./config/config.yaml), please modify urls of QdrantVectorDB and ElasticSearch:
+**6. Config URL for database**: In [config/config.yaml](./config/config.yaml), please modify urls of QdrantVectorDB and ElasticSearch:
 
 ```yml
 ...
@@ -113,7 +82,24 @@ CONTEXTUAL_RAG:
     ELASTIC_SEARCH_URL: <fill here>
 ```
 
-### Ingest data
+**7. Setup Agent:** In [config/config.yaml](./config/config.yaml), please select agent type:
+
+```yml
+    ...
+AGENT:
+    TYPE: <fill here> # [openai, react]
+```
+
+Currently, we support:
+
+|   TYPE   |     Agent     |
+| :------: | :-----------: |
+| `openai` | `OpenAIAgent` |
+| `react`  | `ReActAgent`  |
+
+---
+
+### **Ingest data (Examples)**
 
 ```bash
 bash scripts/contextual_rag_ingest.sh both sample/
@@ -121,7 +107,7 @@ bash scripts/contextual_rag_ingest.sh both sample/
 
 > Note: Please refer to [scripts/contextual_rag_ingest.sh](scripts/contextual_rag_ingest.sh) to change the files dir.
 
-### Continuos Ingestion
+### **Continuous Ingestion**
 
 -   You can add more file paths or even folder paths:
 
@@ -129,7 +115,9 @@ bash scripts/contextual_rag_ingest.sh both sample/
 python src/ingest/add_files.py --type both --files a.pdf b.docx docs/ ...
 ```
 
-### File Readers
+---
+
+### **File Readers**
 
 -   You can refer to: [here](./tests/test_loader.py) to see how to use each of them.
 
@@ -160,7 +148,9 @@ documents = loader.load_data(Path("sample/2409.13588v1.pdf"))
 ...
 ```
 
-### Run demo
+---
+
+### **Run demo**
 
 -   **1. Contextual RAG**
 
@@ -174,7 +164,9 @@ python demo/demo_contextual_rag.py --q "Cái gì thất bại đề cử di sả
 python demo/demo_contextual_rag_react_agent.py --q "ChainBuddy là gì ?"
 ```
 
-### Example Usage:
+---
+
+### **Example Usage**
 
 -   **1. Contextual RAG**
 
@@ -194,17 +186,21 @@ print(rag.contextual_rag_search(q))
 -   **2. ContextualRagReactAgent**
 
 ```python
-from src.settings import Settings
-from src.agents.react_agent import ContextualRagReactAgent
-from src.tools.contextual_rag_tool import load_contextual_rag_tool
+from api.service import ContextualRagReactAgent
 
-setting = Settings()
+agent = ContextualRagReactAgent()
 
-agent = ContextualRagReactAgent.from_tools(
-    setting=setting,
-    tools=[load_contextual_rag_tool()],
-    verbose=True,
-)
+q = "ChainBuddy là gì ?"
 
-print(agent.predict("ChainBuddy là gì ?"))
+print(agent.complete(q))
+```
+
+## **Start application**
+
+```bash
+# backend
+uvicorn app:app --reload
+
+# UI
+streamlit run streamlit_ui.py
 ```

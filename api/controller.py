@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Request
-from .service import ContextualRagReactAgent
+from .service import ContextualRagAgent
 
 router = APIRouter()
-assistant = ContextualRagReactAgent()
+assistant = ContextualRagAgent()
 
 
 # --- API Endpoints ---

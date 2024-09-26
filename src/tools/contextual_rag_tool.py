@@ -22,7 +22,7 @@ def load_contextual_rag_tool():
         Returns:
             str: The answer to the query.
         """
-        return rag.contextual_rag_search(query_str)
+        return rag.contextual_rag_search(query_str, debug=True)
 
     return FunctionTool.from_defaults(
         fn=answer_query,

@@ -1,155 +1,152 @@
-import sys
-from pathlib import Path
-from icecream import ic
-from dotenv import load_dotenv
+"""ReAct agent.
 
-sys.path.append(str(Path(__file__).parent.parent))
+Simple wrapper around AgentRunner + ReActAgentWorker.
 
-from llama_index.core import Settings
-from llama_index.llms.openai import OpenAI
-from llama_index.core.agent import ReActAgent
-from llama_index.core.tools import FunctionTool
-from llama_index.core.llms.function_calling import FunctionCallingLLM
+For the legacy implementation see:
+```python
+from llama_index.core.agent.legacy.react.base import ReActAgent
+```
 
-from src.settings import Settings as ContextualRagSettings
+"""
 
-load_dotenv()
+from typing import (
+    Any,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    Callable,
+)
+
+from llama_index.core.agent.react.formatter import ReActChatFormatter
+from llama_index.core.agent.react.output_parser import ReActOutputParser
+from llama_index.core.agent.react.step import ReActAgentWorker
+from llama_index.core.agent.runner.base import AgentRunner
+from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.callbacks import (
+    CallbackManager,
+)
+from llama_index.core.llms.llm import LLM
+from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
+from llama_index.core.memory.types import BaseMemory
+from llama_index.core.objects.base import ObjectRetriever
+from llama_index.core.settings import Settings
+from llama_index.core.tools import BaseTool, ToolOutput
+from llama_index.core.prompts.mixin import PromptMixinType
 
 
-class ContextualRagReactAgent:
+class ReActAgent(AgentRunner):
+    """ReAct agent.
+
+    Subclasses AgentRunner with a ReActAgentWorker.
+
+    For the legacy implementation see:
+    ```python
+    from llama_index.core.agent.legacy.react.base import ReActAgent
+    ```
+
     """
-    ContextualRagReactAgent is a class that acts as a wrapper around the ReActAgent class.
-    """
-
-    setting: ContextualRagSettings
-    llm: FunctionCallingLLM
-    tools: list[FunctionTool]
-    verbose: bool
-    query_engine: ReActAgent
 
     def __init__(
         self,
-        setting: ContextualRagSettings,
-        tools: list[FunctionTool],
-        llm: FunctionCallingLLM | None = None,
-        verbose: bool = True,
-        **kwargs,
+        tools: Sequence[BaseTool],
+        llm: LLM,
+        memory: BaseMemory,
+        max_iterations: int = 10,
+        react_chat_formatter: Optional[ReActChatFormatter] = None,
+        output_parser: Optional[ReActOutputParser] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        verbose: bool = False,
+        tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
+        context: Optional[str] = None,
+        handle_reasoning_failure_fn: Optional[
+            Callable[[CallbackManager, Exception], ToolOutput]
+        ] = None,
     ) -> None:
-        """
-        Initialize the ContextualRagReactAgent class.
+        """Init params."""
+        callback_manager = callback_manager or llm.callback_manager
+        if context and react_chat_formatter:
+            raise ValueError("Cannot provide both context and react_chat_formatter")
+        if context:
+            react_chat_formatter = ReActChatFormatter.from_context(context)
 
-        Args:
-            setting (ContextualRagSettings): Settings.
-            tools (list[FunctionTool]): List of tools to be used by the agent.
-            llm (FunctionCallingLLM, optional): LLM model to be used by the agent. Defaults to `None`.
-            verbose (bool, optional): Verbosity of the agent. Defaults to `True`.
-        """
-
-        self.setting = setting
-
-        self.llm = llm or self.load_model(self.setting.service, self.setting.model)
-        Settings.llm = self.llm
-
-        self.tools = tools
-
-        self.verbose = verbose
-
-        self.query_engine = self.create_query_engine()
-
-        ic("ContextualRagReactAgent initialized !!!")
+        step_engine = ReActAgentWorker.from_tools(
+            tools=tools,
+            tool_retriever=tool_retriever,
+            llm=llm,
+            max_iterations=max_iterations,
+            react_chat_formatter=react_chat_formatter,
+            output_parser=output_parser,
+            callback_manager=callback_manager,
+            verbose=verbose,
+            handle_reasoning_failure_fn=handle_reasoning_failure_fn,
+        )
+        super().__init__(
+            step_engine,
+            memory=memory,
+            llm=llm,
+            callback_manager=callback_manager,
+            verbose=verbose,
+        )
 
     @classmethod
     def from_tools(
         cls,
-        setting: ContextualRagSettings,
-        tools: list[FunctionTool],
-        llm: FunctionCallingLLM | None = None,
-        verbose: bool = True,
-        **kwargs,
-    ):
-        """
-        Create an instance of the ContextualRagReactAgent class from a list of tools.
+        tools: Optional[List[BaseTool]] = None,
+        tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
+        llm: Optional[LLM] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        memory: Optional[BaseMemory] = None,
+        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
+        max_iterations: int = 10,
+        react_chat_formatter: Optional[ReActChatFormatter] = None,
+        output_parser: Optional[ReActOutputParser] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        verbose: bool = False,
+        context: Optional[str] = None,
+        handle_reasoning_failure_fn: Optional[
+            Callable[[CallbackManager, Exception], ToolOutput]
+        ] = None,
+        **kwargs: Any,
+    ) -> "ReActAgent":
+        """Convenience constructor method from set of BaseTools (Optional).
 
-        Args:
-            setting (ContextualRagSettings): Settings.
-            tools (list[FunctionTool]): List of tools to be used by the agent.
-            llm (FunctionCallingLLM, optional): LLM model to be used by the agent. Defaults to `None`.
-            verbose (bool, optional): Verbosity of the agent. Defaults to `True`.
+        NOTE: kwargs should have been exhausted by this point. In other words
+        the various upstream components such as BaseSynthesizer (response synthesizer)
+        or BaseRetriever should have picked up off their respective kwargs in their
+        constructions.
+
+        If `handle_reasoning_failure_fn` is provided, when LLM fails to follow the response templates specified in
+        the System Prompt, this function will be called. This function should provide to the Agent, so that the Agent
+        can have a second chance to fix its mistakes.
+        To handle the exception yourself, you can provide a function that raises the `Exception`.
+
+        Note: If you modified any response template in the System Prompt, you should override the method
+        `_extract_reasoning_step` in `ReActAgentWorker`.
 
         Returns:
-            ContextualRagReactAgent: An instance of the ContextualRagReactAgent class.
+            ReActAgent
         """
+        llm = llm or Settings.llm
+        if callback_manager is not None:
+            llm.callback_manager = callback_manager
+        memory = memory or memory_cls.from_defaults(
+            chat_history=chat_history or [], llm=llm
+        )
         return cls(
-            setting=setting,
-            tools=tools,
+            tools=tools or [],
+            tool_retriever=tool_retriever,
             llm=llm,
+            memory=memory,
+            max_iterations=max_iterations,
+            react_chat_formatter=react_chat_formatter,
+            output_parser=output_parser,
+            callback_manager=callback_manager,
             verbose=verbose,
-            **kwargs,
+            context=context,
+            handle_reasoning_failure_fn=handle_reasoning_failure_fn,
         )
 
-    def load_model(self, service: str, model: str) -> FunctionCallingLLM:
-        """
-        Load LLM model.
-
-        Args:
-            service (str): service to use, e.g., `openai`.
-            model (str): model name, e.g., `gpt-4o-mini`.
-
-        Returns:
-            FunctionCallingLLM: LLM model.
-        """
-        if service == "openai":
-            return OpenAI(model=model)
-        else:
-            raise ValueError(f"Service {service} not supported.")
-
-    def add_tool(self, tool: FunctionTool) -> None:
-        """
-        Add a tool to the agent.
-
-        Args:
-            tool (FunctionTool): Tool to be added to the agent.
-        """
-        assert isinstance(tool, FunctionTool)
-
-        self.tools.append(tool)
-
-        # Recreate the query engine with the updated tools
-        self.query_engine = self.create_query_engine()
-
-    def create_query_engine(self) -> ReActAgent:
-        """
-        Create a query engine.
-
-        Returns:
-            ReActAgent: ReactAgent as a query engine.
-        """
-        return ReActAgent.from_tools(
-            tools=self.tools,
-            llm=self.llm,
-            verbose=self.verbose,
-        )
-
-    def predict(self, query: str) -> str:
-        """
-        Give a response to the query.
-
-        Args:
-            query (str): Query to be responded to.
-
-        Returns:
-            str: Response to the query.
-        """
-        return self.query_engine.chat(query)
-
-    async def apredict(self, query: str) -> str:
-        """
-        Give a response to the query asynchronously.
-
-        Args:
-            query (str): Query to be responded to.
-
-        Returns:
-            str: Response to the query.
-        """
-        return await self.query_engine.achat(query)
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt modules."""
+        return {"agent_worker": self.agent_worker}

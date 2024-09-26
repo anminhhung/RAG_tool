@@ -27,4 +27,4 @@ CONTEXTUAL_RAG:
     TOP_N: 3
 
 AGENT:
-    TYPE: "react" # [openai, react]
+    TYPE: "openai" # [openai, react]

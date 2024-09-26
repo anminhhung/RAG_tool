@@ -164,13 +164,13 @@ documents = loader.load_data(Path("sample/2409.13588v1.pdf"))
 
 ### Run demo
 
--   1. Contextual RAG:
+-   **1. Contextual RAG**
 
 ```bash
 python demo/demo_contextual_rag.py --q "Cái gì thất bại đề cử di sản thế giới ?" --compare --debug
 ```
 
--   2. ContextualRagReactAgent:
+-   **2. ContextualRagReactAgent**
 
 ```bash
 python demo/demo_contextual_rag_react_agent.py --q "ChainBuddy là gì ?"

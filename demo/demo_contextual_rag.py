@@ -1,3 +1,8 @@
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent))
+
 import argparse
 import threading
 from src.settings import setting

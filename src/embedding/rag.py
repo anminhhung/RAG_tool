@@ -5,6 +5,7 @@ from tqdm import tqdm
 from icecream import ic
 from pathlib import Path
 from typing import Literal
+from datetime import datetime
 from dotenv import load_dotenv
 
 sys.path.append(str(Path(Path(__file__)).parent.parent.parent))
@@ -31,12 +32,18 @@ from llama_index.core import (
 
 from src.constants import CONTEXTUAL_PROMPT
 from src.schemas import RAGType, DocumentMetadata
-from src.readers.file_reader import parse_multiple_file
+from src.readers.file_reader import parse_multiple_files
 from src.embedding.elastic_search import ElasticSearch
 from src.settings import Settings as ConfigSettings, setting as config_setting
 
+
+def time_format():
+    now = datetime.now()
+    return f'DEBUG - {now.strftime("%H:%M:%S")} - '
+
+
 load_dotenv()
-ic.configureOutput(includeContext=True, prefix="DEBUG - ")
+ic.configureOutput(includeContext=True, prefix=time_format)
 
 Settings.chunk_size = config_setting.chunk_size
 
@@ -338,7 +345,7 @@ class RAG:
             folder_dir (str | Path): The folder directory containing the papers.
             type (Literal["origin", "contextual", "both"]): The type to ingest. Default to `contextual`.
         """
-        raw_documents = parse_multiple_file(folder_dir)
+        raw_documents = parse_multiple_files(folder_dir)
         splited_documents = self.split_document(raw_documents)
 
         ingest_documents: list[Document] = []
@@ -377,7 +384,7 @@ class RAG:
             files_or_folders (list[str]): List of file paths or folder to be ingested.
             type (Literal["origin", "contextual", "both"]): Type of RAG type to ingest.
         """
-        raw_documents = parse_multiple_file(files_or_folders)
+        raw_documents = parse_multiple_files(files_or_folders)
         splited_documents = self.split_document(raw_documents)
 
         ingest_documents: list[Document] = []

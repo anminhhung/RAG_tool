@@ -50,7 +50,7 @@ Settings.chunk_size = config_setting.chunk_size
 
 class RAG:
     """
-    Retrieve and Generate (RAG) class to handle the indexing and searching of both Origin and Contextual RAG.
+    Retrieval-Augmented Generation (RAG) class to handle the indexing and searching of both Origin and Contextual RAG.
     """
 
     setting: ConfigSettings

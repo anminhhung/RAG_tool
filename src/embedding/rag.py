@@ -223,14 +223,13 @@ class RAG:
             show_progress (bool): Show the progress bar.
             type (Literal["origin", "contextual"]): The type of RAG to ingest.
         """
-        ic(f"Indexing {type} data...")
 
         if type == "origin":
             collection_name = self.setting.original_rag_collection_name
         else:
             collection_name = self.setting.contextual_rag_collection_name
 
-        ic(collection_name)
+        ic(type, collection_name)
 
         vector_store = QdrantVectorStore(
             client=self.qdrant_client, collection_name=collection_name
@@ -242,8 +241,6 @@ class RAG:
             documents, storage_context=storage_context, show_progress=show_progress
         )
 
-        ic(f"Indexed: {type} !!!")
-
         return index  # noqa
 
     def insert_data(
@@ -252,14 +249,13 @@ class RAG:
         show_progress: bool = True,
         type: Literal["origin", "contextual"] = "contextual",
     ):
-        ic(type)
 
         if type == "origin":
             collection_name = self.setting.original_rag_collection_name
         else:
             collection_name = self.setting.contextual_rag_collection_name
 
-        ic(collection_name)
+        ic(type, collection_name)
 
         vector_store_index = self.get_qdrant_vector_store_index(
             client=self.qdrant_client,
@@ -274,8 +270,6 @@ class RAG:
         for document in documents:
             vector_store_index.insert(document)
 
-        ic(f"Added data to {type} !!!")
-
     def get_qdrant_vector_store_index(
         self, client: QdrantClient, collection_name: str
     ) -> VectorStoreIndex:
@@ -289,6 +283,8 @@ class RAG:
         Returns:
             VectorStoreIndex: The VectorStoreIndex from the QdrantVectorStore.
         """
+        ic(collection_name)
+
         vector_store = QdrantVectorStore(client=client, collection_name=collection_name)
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
@@ -308,6 +304,7 @@ class RAG:
         Returns:
             BaseQueryEngine | dict[str, BaseQueryEngine]: The query engine.
         """
+        ic(type)
 
         if type == RAGType.ORIGIN:
             return self.get_qdrant_vector_store_index(
@@ -345,6 +342,8 @@ class RAG:
             folder_dir (str | Path): The folder directory containing the papers.
             type (Literal["origin", "contextual", "both"]): The type to ingest. Default to `contextual`.
         """
+        ic(folder_dir, type)
+
         raw_documents = parse_multiple_files(folder_dir)
         splited_documents = self.split_document(raw_documents)
 
@@ -384,6 +383,8 @@ class RAG:
             files_or_folders (list[str]): List of file paths or folder to be ingested.
             type (Literal["origin", "contextual", "both"]): Type of RAG type to ingest.
         """
+        ic(files_or_folders, type)
+
         raw_documents = parse_multiple_files(files_or_folders)
         splited_documents = self.split_document(raw_documents)
 
@@ -442,7 +443,7 @@ class RAG:
         Returns:
             str: The search results.
         """
-        ic(query)
+        ic(query, k, debug)
 
         semantic_weight = self.setting.semantic_weight
         bm25_weight = self.setting.bm25_weight

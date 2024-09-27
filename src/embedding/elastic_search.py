@@ -21,11 +21,11 @@ class ElasticSearch:
             url (str): URL of the ElasticSearch server
             index_name (str): Name of the index used to be created for contextual RAG
         """
+        ic(url, index_name)
+
         self.es_client = Elasticsearch(url)
         self.index_name = index_name
         self.create_index()
-
-        ic("ElasticSearch client initialized !")
 
     def create_index(self):
         """
@@ -90,7 +90,7 @@ class ElasticSearch:
         Returns:
             list[ElasticSearchResponse]: List of ElasticSearch response objects.
         """
-        ic(query)
+        ic(query, k)
 
         self.es_client.indices.refresh(
             index=self.index_name

@@ -8,7 +8,7 @@ from typing import Literal
 from datetime import datetime
 from dotenv import load_dotenv
 
-sys.path.append(str(Path(Path(__file__)).parent.parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from qdrant_client import QdrantClient
 from llama_index.llms.openai import OpenAI
@@ -39,7 +39,7 @@ from src.settings import Settings as ConfigSettings, setting as config_setting
 
 def time_format():
     now = datetime.now()
-    return f'DEBUG - {now.strftime("%H:%M:%S")} - '
+    return f'{now.strftime("%H:%M:%S")} - DEBUG - '
 
 
 load_dotenv()

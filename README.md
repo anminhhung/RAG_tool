@@ -184,10 +184,10 @@ documents = loader.load_data(Path("sample/2409.13588v1.pdf"))
 python demo/demo_contextual_rag.py --q "Cái gì thất bại đề cử di sản thế giới ?" --compare --debug
 ```
 
--   **2. ContextualRagAgent**
+-   **2. ChatbotAssistant**
 
 ```bash
-python demo/demo_contextual_rag_agent.py --q "ChainBuddy là gì ?"
+python demo/demo_chatbot_assistant.py --q "ChainBuddy là gì ?"
 ```
 
 ---
@@ -209,16 +209,16 @@ q = "Cái gì thất bại đề cử di sản thế giới ?"
 print(rag.contextual_rag_search(q))
 ```
 
--   **2. ContextualRagAgent**
+-   **2. ChatbotAssistant**
 
 ```python
-from api.service import ContextualRagAgent
+from api.service import ChatbotAssistant
 
-agent = ContextualRagAgent()
+bot = ChatbotAssistant()
 
 q = "ChainBuddy là gì ?"
 
-print(agent.complete(q))
+print(bot.complete(q))
 ```
 
 ## **Start application**

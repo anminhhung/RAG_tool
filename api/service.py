@@ -19,7 +19,7 @@ from src.constants import SERVICE, TEMPERATURE, MODEL_ID, STREAM, AGENT_TYPE
 load_dotenv(override=True)
 
 
-class ContextualRagAgent:
+class ChatbotAssistant:
     query_engine: AgentRunner
     tools_dict: dict
 

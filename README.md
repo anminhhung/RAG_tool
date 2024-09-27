@@ -27,7 +27,7 @@ git clone https://github.com/anminhhung/RAG_tool
 cd RAG_tool
 ```
 
-![](./public/videos/clone-repository.mp4)
+https://github.com/user-attachments/assets/db7136d6-1826-4e27-8a21-b16abbb79eea
 
 **2. (Optional) Create and activate a virtual environment:**
 
@@ -47,7 +47,7 @@ python -m venv venv
 
 > Note: Please downgrade to `python3.11` if any conflicts occur.
 
-![](./public/videos/venv-setup.mp4)
+https://github.com/user-attachments/assets/c4b879b3-4082-456f-854e-364b47d3a4b1
 
 **3. Install the required dependencies:**
 
@@ -55,7 +55,7 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-![](./public/videos/install-requirements.mp4)
+https://github.com/user-attachments/assets/79bdb39f-4d7b-49c5-89ec-cbb8bb39b2ad
 
 **4. After activating your environment, run:**
 
@@ -71,7 +71,7 @@ pip install pytest
 pytest tests/
 ```
 
-![](./public/videos/additional-install.mp4)
+https://github.com/user-attachments/assets/26a27bdd-557f-446c-984d-c3bc601e3b25
 
 **5. Run database:**
 
@@ -79,7 +79,7 @@ pytest tests/
 docker compose up -d
 ```
 
-![](./public/videos/run-db.mp4)
+https://github.com/user-attachments/assets/19b65073-ede3-45d3-801b-5788000eb172
 
 **6. Config URL for database**: In [config/config.yaml](./config/config.yaml), please modify urls of QdrantVectorDB and ElasticSearch:
 
@@ -92,7 +92,7 @@ CONTEXTUAL_RAG:
     ELASTIC_SEARCH_URL: <fill here>
 ```
 
-![](./public/videos/config-db-url.mp4)
+https://github.com/user-attachments/assets/16091cb2-8b33-4ea9-8494-7e34c7e3e427
 
 **7. Setup Agent:** In [config/config.yaml](./config/config.yaml), please select agent type:
 
@@ -102,14 +102,14 @@ AGENT:
     TYPE: <fill here> # [openai, react]
 ```
 
-![](./public/videos/setup-agent-type.mov)
-
 Currently, we support:
 
 |   TYPE   |     Agent     |
 | :------: | :-----------: |
 | `openai` | `OpenAIAgent` |
 | `react`  | `ReActAgent`  |
+
+https://github.com/user-attachments/assets/5eda47f7-7c35-4fd1-a77d-b53b4db5ec01
 
 **8. Setup API Keys:** Please create `.env` file and provide these API keys:
 
@@ -119,7 +119,7 @@ Currently, we support:
 | `LLAMA_PARSE_API_KEY` |    [LlamaCloud](https://cloud.llamaindex.ai/api-key)    |
 |   `COHERE_API_KEY`    |     [Cohere](https://dashboard.cohere.com/api-keys)     |
 
-![](./public/videos/setup-api-keys.mp4)
+https://github.com/user-attachments/assets/b45c9687-278b-4953-9b5b-31fa53db0c8c
 
 ---
 
@@ -131,7 +131,7 @@ bash scripts/contextual_rag_ingest.sh both sample/
 
 > Note: Please refer to [scripts/contextual_rag_ingest.sh](scripts/contextual_rag_ingest.sh) to change the files dir.
 
-![](./public/videos/ingest-example.mp4)
+https://github.com/user-attachments/assets/0201d09e-4d17-4372-8680-fbcfb43b908d
 
 ### **Continuous Ingestion**
 

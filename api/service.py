@@ -9,8 +9,9 @@ from llama_index.llms.openai import OpenAI
 from llama_index.llms.ollama import Ollama
 from llama_index.llms.gemini import Gemini
 from src.agents.react_agent import ReActAgent
-from llama_index.agent.openai import OpenAIAgent
 from llama_index.core.agent import AgentRunner
+from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.tools import FunctionTool
 from starlette.responses import StreamingResponse, Response
 from src.tools.contextual_rag_tool import load_contextual_rag_tool
 from src.constants import SERVICE, TEMPERATURE, MODEL_ID, STREAM, AGENT_TYPE
@@ -23,15 +24,32 @@ class ContextualRagAgent:
     tools_dict: dict
 
     def __init__(self):
+        self.tools = self.load_tools()
         self.query_engine = self.create_query_engine()
 
     def load_tools(self):
-
+        """
+        Load default RAG tool.
+        """
         contextual_rag_tool = load_contextual_rag_tool()
-        return [
-            contextual_rag_tool,
-            # Add more tools here,
-        ]
+        return [contextual_rag_tool]
+
+    def add_tools(self, tools: FunctionTool | list[FunctionTool]) -> None:
+        """
+        Add more tools to the agent.
+
+        Args:
+            tools (FunctionTool | list[FunctionTool]): A single tool or a list of tools to add to the agent.
+        """
+        if isinstance(tools, FunctionTool):
+            tools = [tools]
+
+        self.tools.extend(tools)
+        ic(f"Add: {len(tools)} tools.")
+
+        self.query_engine = (
+            self.create_query_engine()
+        )  # Re-create the query engine with the new tools
 
     def create_query_engine(self):
         """
@@ -46,16 +64,19 @@ class ContextualRagAgent:
 
         llm = self.load_model(SERVICE, MODEL_ID)
         Settings.llm = llm
-        tools = self.load_tools()
+
+        ic(AGENT_TYPE, len(self.tools))
 
         if AGENT_TYPE == "react":
-            query_engine = ReActAgent.from_tools(tools=tools, verbose=True, llm=llm)
+            query_engine = ReActAgent.from_tools(
+                tools=self.tools, verbose=True, llm=llm
+            )
         elif AGENT_TYPE == "openai":
-            query_engine = OpenAIAgent.from_tools(tools=tools, verbose=True, llm=llm)
+            query_engine = OpenAIAgent.from_tools(
+                tools=self.tools, verbose=True, llm=llm
+            )
         else:
             raise ValueError("Unsupported agent type!")
-
-        ic(query_engine)
 
         return query_engine
 

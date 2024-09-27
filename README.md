@@ -1,6 +1,6 @@
 ## **Base RAG tool**
 
-![](./public/contextual_rag.png)
+![](./public/images/contextual_rag.png)
 
 ## **Table of Contents**
 
@@ -27,6 +27,8 @@ git clone https://github.com/anminhhung/RAG_tool
 cd RAG_tool
 ```
 
+![](./public/videos/clone-repository.mp4)
+
 **2. (Optional) Create and activate a virtual environment:**
 
 -   For Unix/macOS:
@@ -45,11 +47,15 @@ python -m venv venv
 
 > Note: Please downgrade to `python3.11` if any conflicts occur.
 
+![](./public/videos/venv-setup.mp4)
+
 **3. Install the required dependencies:**
 
 ```bash
 pip install -r requirements.txt
 ```
+
+![](./public/videos/install-requirements.mp4)
 
 **4. After activating your environment, run:**
 
@@ -65,11 +71,15 @@ pip install pytest
 pytest tests/
 ```
 
+![](./public/videos/additional-install.mp4)
+
 **5. Run database:**
 
 ```bash
 docker compose up -d
 ```
+
+![](./public/videos/run-db.mp4)
 
 **6. Config URL for database**: In [config/config.yaml](./config/config.yaml), please modify urls of QdrantVectorDB and ElasticSearch:
 
@@ -82,6 +92,8 @@ CONTEXTUAL_RAG:
     ELASTIC_SEARCH_URL: <fill here>
 ```
 
+![](./public/videos/config-db-url.mp4)
+
 **7. Setup Agent:** In [config/config.yaml](./config/config.yaml), please select agent type:
 
 ```yml
@@ -89,6 +101,8 @@ CONTEXTUAL_RAG:
 AGENT:
     TYPE: <fill here> # [openai, react]
 ```
+
+![](./public/videos/setup-agent-type.mov)
 
 Currently, we support:
 
@@ -105,6 +119,8 @@ Currently, we support:
 | `LLAMA_PARSE_API_KEY` |    [LlamaCloud](https://cloud.llamaindex.ai/api-key)    |
 |   `COHERE_API_KEY`    |     [Cohere](https://dashboard.cohere.com/api-keys)     |
 
+![](./public/videos/setup-api-keys.mp4)
+
 ---
 
 ### **Ingest data (Examples)**
@@ -114,6 +130,8 @@ bash scripts/contextual_rag_ingest.sh both sample/
 ```
 
 > Note: Please refer to [scripts/contextual_rag_ingest.sh](scripts/contextual_rag_ingest.sh) to change the files dir.
+
+![](./public/videos/ingest-example.mp4)
 
 ### **Continuous Ingestion**
 

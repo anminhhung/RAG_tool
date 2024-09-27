@@ -17,19 +17,6 @@ def send_query(text, api_key=None):
 
 
 def run_app(username):
-    # st.sidebar.header("Visualization")
-    # with st.sidebar:
-
-    #     graph_cache_file = './outputs/nx_graph.html'
-
-    #     HtmlFile = open(graph_cache_file, 'r', encoding='utf-8')
-    #     source_code = HtmlFile.read()
-    #     components.html(source_code, height = 500, width=500)
-    # api_key = st.sidebar.text_input("Enter Groq API Key", key="api_key", type="password")
-
-    # col1, col2 = st.columns([2, 1])
-
-    # with col1:
     st.title("💬 Chatbot")
     st.caption("🚀 I'm a Local Bot")
 
@@ -67,39 +54,20 @@ def run_app(username):
 
         res.raise_for_status()
 
-        # data = res.json()
-        # answer = data["completion"]
-        # links = data.get("sources", [])
-        # with st.sidebar:
-
-        #     graph_cache_file = './outputs/nx_graph.html'
-
-        #     HtmlFile = open(graph_cache_file, 'r', encoding='utf-8')
-        #     source_code = HtmlFile.read()
-        #     components.html(source_code, height = 500, width=500)
-
         with st.chat_message("assistant"):
             # Create a placeholder for streaming messages
             message_placeholder = st.empty()
             full_response = ""
 
             for chunk in res.iter_content(chunk_size=None, decode_unicode=True):
-                # print(chunk)
-                # try:
                 streaming_resp = chunk
                 full_response += streaming_resp
                 message_placeholder.markdown(full_response + "▌")
-                # except:
-                # continue
             message_placeholder.markdown(full_response)
 
         st.session_state.messages.append(
             {"role": "assistant", "content": full_response}
         )
-        # Save the chat history to the database
-
-    # with col2:
-    #     st.header("Don't know what to do yet!")
 
 
 if __name__ == "__main__":

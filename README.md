@@ -2,7 +2,7 @@
 
 ![](./public/images/contextual_rag.png)
 
-## **Table of Contents**
+### **Table of Contents**
 
 1. [**Installation**](#installation)
 
@@ -16,7 +16,7 @@
 
 6. [**Start Application**](#start-application)
 
-## **Installation**
+### **Installation**
 
 To install this application, follow these steps:
 
@@ -221,7 +221,7 @@ q = "ChainBuddy là gì ?"
 print(bot.complete(q))
 ```
 
-## **Start application**
+### **Start application**
 
 ```bash
 # backend

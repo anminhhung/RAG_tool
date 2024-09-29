@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import uuid
 from tqdm import tqdm
 from icecream import ic
@@ -30,7 +31,7 @@ from llama_index.core import (
     VectorStoreIndex,
 )
 
-from src.constants import CONTEXTUAL_PROMPT
+from src.constants import CONTEXTUAL_PROMPT, QA_PROMPT
 from src.schemas import RAGType, DocumentMetadata
 from src.readers.file_reader import parse_multiple_files
 from src.embedding.elastic_search import ElasticSearch
@@ -460,6 +461,7 @@ class RAG:
         query_engine = RetrieverQueryEngine(retriever=retriever)
 
         semantic_results: Response = query_engine.query(query)
+
         semantic_doc_id = [
             node.metadata["doc_id"] for node in semantic_results.source_nodes
         ]
@@ -524,10 +526,22 @@ class RAG:
 
         retrieved_nodes = reranker.postprocess_nodes(combined_nodes, query_bundle)
 
-        text_nodes = [Node(text=node.node.text) for node in retrieved_nodes]
+        contexts = [n.node.text for n in retrieved_nodes]
 
-        vector_store = VectorStoreIndex(
-            nodes=text_nodes,
-        ).as_query_engine()
+        messages = [
+            ChatMessage(
+                role="system",
+                content="You are a helpful assistant.",
+            ),
+            ChatMessage(
+                role="user",
+                content=QA_PROMPT.format(
+                    context_str=json.dumps(contexts),
+                    query_str=query,
+                ),
+            ),
+        ]
 
-        return vector_store.query(query)
+        response = self.llm.chat(messages).message.content
+
+        return response

@@ -1,17 +1,20 @@
 services:
-  qdrant:
-    image: qdrant/qdrant:latest
-    restart: always
-    ports:
-      - "6333:6333"
-      - "6334:6334"
+    qdrant:
+        image: qdrant/qdrant:latest
+        restart: always
+        ports:
+            - "6333:6333"
+            - "6334:6334"
 
-  elastic-search:
-    image: elasticsearch:8.8.0
-    restart: always
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-    ports:
-      - "9200:9200"
-      - "9300:9300"
+    elasticsearch:
+        image: elasticsearch:8.8.0
+        container_name: shc_elasticsearch
+        restart: always
+        environment:
+            - discovery.type=single-node
+            - xpack.security.enabled=false
+            - logger.level=error
+            - ES_JAVA_OPTS=-Xms512m -Xmx512m
+        ports:
+            - "9200:9200"
+            - "9300:9300"

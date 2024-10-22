@@ -4,17 +4,24 @@ from icecream import ic
 from dotenv import load_dotenv
 
 from llama_index.core import Settings
-from llama_index.llms.groq import Groq  # noqa: F401
+from llama_index.llms.groq import Groq
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.ollama import Ollama
 from llama_index.llms.gemini import Gemini
+
 from src.agents.react_agent import ReActAgent
 from llama_index.core.agent import AgentRunner
 from llama_index.agent.openai import OpenAIAgent
 from llama_index.core.tools import FunctionTool
 from starlette.responses import StreamingResponse, Response
 from src.tools.contextual_rag_tool import load_contextual_rag_tool
-from src.constants import SERVICE, TEMPERATURE, MODEL_ID, STREAM, AGENT_TYPE
+from src.constants import (
+    SERVICE,
+    TEMPERATURE,
+    MODEL_ID,
+    STREAM,
+    AGENT_TYPE,
+)
 
 load_dotenv(override=True)
 
@@ -104,9 +111,13 @@ class ChatbotAssistant:
                 temperature=TEMPERATURE,
                 api_key=os.getenv("OPENAI_API_KEY"),
             )
-        # elif service == "groq":
-        #     logging.info(f"Loading Groq Model: {model_id}")
-        #     return Groq(model=model_id, temperature=TEMPERATURE, api_key=os.getenv("GROQ_API_KEY"))
+        elif service == "groq":
+            logging.info(f"Loading Groq Model: {model_id}")
+            return Groq(
+                model=model_id,
+                temperature=TEMPERATURE,
+                api_key=os.getenv("GROQ_API_KEY"),
+            )
         elif service == "gemini":
             logging.info(f"Loading Gemini Model: {model_id}")
             return Gemini(

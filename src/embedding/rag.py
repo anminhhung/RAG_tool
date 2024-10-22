@@ -5,15 +5,16 @@ import uuid
 from tqdm import tqdm
 from icecream import ic
 from pathlib import Path
-from typing import Literal
 from datetime import datetime
 from dotenv import load_dotenv
+from typing import Literal, Sequence
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from qdrant_client import QdrantClient
 from llama_index.llms.openai import OpenAI
 from llama_index.core.llms import ChatMessage
+from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.core.schema import NodeWithScore, Node
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core.base.response.schema import Response
@@ -23,6 +24,7 @@ from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.postprocessor.cohere_rerank import CohereRerank
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.node_parser import SemanticSplitterNodeParser
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core import (
     Settings,
     Document,
@@ -31,7 +33,12 @@ from llama_index.core import (
     VectorStoreIndex,
 )
 
-from src.constants import CONTEXTUAL_PROMPT, QA_PROMPT
+from src.constants import (
+    CONTEXTUAL_PROMPT,
+    QA_PROMPT,
+    CONTEXTUAL_SERVICE,
+    CONTEXTUAL_MODEL,
+)
 from src.schemas import RAGType, DocumentMetadata
 from src.readers.file_reader import parse_multiple_files
 from src.embedding.elastic_search import ElasticSearch
@@ -73,7 +80,9 @@ class RAG:
         embed_model = OpenAIEmbedding()
         Settings.embed_model = embed_model
 
-        self.llm = OpenAI(model=setting.model)
+        self.llm = self.load_llm(
+            service=CONTEXTUAL_SERVICE, model_name=CONTEXTUAL_MODEL
+        )
         Settings.llm = self.llm
 
         self.splitter = SemanticSplitterNodeParser(
@@ -87,6 +96,35 @@ class RAG:
         self.qdrant_client = QdrantClient(
             url=setting.qdrant_url,
         )
+
+    def load_llm(self, service: str, model_name: str) -> FunctionCallingLLM:
+        """
+        Load the LLM model based on the contextual service.
+
+        Args:
+            service (str): The contextual service.
+            model_name (str): The model name.
+
+        Returns:
+            FunctionCallingLLM: The LLM model.
+        """
+        self.llm_service = service
+        self.llm_model_name = model_name
+
+        if service == "openai":
+            return OpenAI(model=model_name)
+
+        elif service == "huggingface":
+            return LlamaCPP(
+                model_url=model_name,
+                model_path=None,
+                temperature=0.1,
+                max_new_tokens=2048,
+                # context_window=3900,
+                generate_kwargs={},
+                model_kwargs={"n_gpu_layers": 1},
+                verbose=True,
+            )
 
     def split_document(
         self,
@@ -117,6 +155,21 @@ class RAG:
             documents.append([Document(text=node.get_content()) for node in nodes])
 
         return documents
+
+    def preprocess_message(self, messages: Sequence[ChatMessage]):
+        """
+        Preprocess the message for the LLM.
+
+        Args:
+            message (Sequence[ChatMessage]): The message to preprocess.
+
+        Returns:
+            Sequence[ChatMessage]: The preprocessed message.
+        """
+        if self.llm_service == "huggingface":
+            if len(messages) % 2 == 0:
+                return messages[1:]
+        return messages
 
     def add_contextual_content(
         self,
@@ -152,7 +205,7 @@ class RAG:
                 ),
             ]
 
-            response = self.llm.chat(messages)
+            response = self.llm.chat(self.preprocess_message(messages))
             contextualized_content = response.message.content
 
             # Prepend the contextualized content to the chunk
@@ -542,6 +595,6 @@ class RAG:
             ),
         ]
 
-        response = self.llm.chat(messages).message.content
+        response = self.llm.chat(self.preprocess_message(messages)).message.content
 
         return response

@@ -8,8 +8,8 @@ MODEL:
 
 CONTEXTUAL_RAG:
     CHUNK_SIZE: 2048
-    SERVICE: openai
-    MODEL: "gpt-4o-mini"
+    SERVICE: huggingface 
+    MODEL: "https://huggingface.co/hienhayho/llama-3.2-1B-instruct-10max-steps/resolve/main/unsloth.Q8_0.gguf"
 
     ORIGIN_RAG_COLLECTION_NAME: "original_rag"
     CONTEXTUAL_RAG_COLLECTION_NAME: "contextual_rag"

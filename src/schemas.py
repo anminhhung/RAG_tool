@@ -1,4 +1,4 @@
-from llama_index.core.bridge.pydantic import BaseModel
+from pydantic import BaseModel
 
 
 class RAGType:
@@ -46,3 +46,9 @@ class ElasticSearchResponse(BaseModel):
     content: str
     contextualized_content: str
     score: float
+
+
+class QdrantPayload(BaseModel):
+    document_id: str
+    text: str
+    vector_id: str

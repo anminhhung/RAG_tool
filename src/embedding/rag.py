@@ -39,10 +39,30 @@ from src.constants import (
     CONTEXTUAL_SERVICE,
     CONTEXTUAL_MODEL,
 )
+from src.schemas import QdrantPayload
 from src.schemas import RAGType, DocumentMetadata
 from src.readers.file_reader import parse_multiple_files
 from src.embedding.elastic_search import ElasticSearch
+from src.embedding.vector_database import QdrantVectorDatabase
 from src.settings import Settings as ConfigSettings, setting as config_setting
+
+
+load_dotenv()
+
+
+def get_embedding(
+    chunk: str,
+    service=config_setting.embed_service,
+    model_name=config_setting.embed_model,
+):
+    if service == "openai":
+        embed_model = OpenAIEmbedding(
+            model=model_name, api_key=os.getenv("OPENAI_API_KEY")
+        )
+    else:
+        raise ValueError(f"Invalid embedding service: {service}")
+
+    return embed_model.get_text_embedding(chunk)
 
 
 def time_format():
@@ -65,7 +85,7 @@ class RAG:
     llm: OpenAI
     splitter: SemanticSplitterNodeParser
     es: ElasticSearch
-    qdrant_client: QdrantClient
+    qdrant_client: QdrantVectorDatabase
 
     def __init__(self, setting: ConfigSettings):
         """
@@ -84,6 +104,7 @@ class RAG:
             service=CONTEXTUAL_SERVICE, model_name=CONTEXTUAL_MODEL
         )
         Settings.llm = self.llm
+        Settings.chunk_size = setting.chunk_size
 
         self.splitter = SemanticSplitterNodeParser(
             buffer_size=1, breakpoint_percentile_threshold=95, embed_model=embed_model
@@ -93,9 +114,7 @@ class RAG:
             url=setting.elastic_search_url, index_name=setting.elastic_search_index_name
         )
 
-        self.qdrant_client = QdrantClient(
-            url=setting.qdrant_url,
-        )
+        self.qdrant_client = QdrantVectorDatabase(url=setting.qdrant_url)
 
     def load_llm(self, service: str, model_name: str) -> FunctionCallingLLM:
         """
@@ -266,7 +285,6 @@ class RAG:
     def ingest_data(
         self,
         documents: list[Document],
-        show_progress: bool = True,
         type: Literal["origin", "contextual"] = "contextual",
     ):
         """
@@ -285,17 +303,23 @@ class RAG:
 
         ic(type, collection_name)
 
-        vector_store = QdrantVectorStore(
-            client=self.qdrant_client, collection_name=collection_name
+        vector_ids = [str(uuid.uuid4()) for _ in tqdm(range(len(documents)))]
+        vectors = [get_embedding(doc.text) for doc in tqdm(documents)]
+        payloads = [
+            QdrantPayload(
+                document_id=str(uuid.uuid4()),
+                text=doc.text,
+                vector_id=vector_id,
+            )
+            for doc, vector_id in tqdm(zip(documents, vector_ids))
+        ]
+
+        self.qdrant_client.add_vectors(
+            collection_name=collection_name,
+            vector_ids=vector_ids,
+            vectors=vectors,
+            payloads=payloads,
         )
-
-        storage_context = StorageContext.from_defaults(vector_store=vector_store)
-
-        index = VectorStoreIndex.from_documents(
-            documents, storage_context=storage_context, show_progress=show_progress
-        )
-
-        return index  # noqa
 
     def insert_data(
         self,
@@ -311,18 +335,12 @@ class RAG:
 
         ic(type, collection_name)
 
-        vector_store_index = self.get_qdrant_vector_store_index(
-            client=self.qdrant_client,
-            collection_name=collection_name,
-        )
-
         documents = (
             tqdm(documents, desc=f"Adding more data to {type} ...")
             if show_progress
             else documents
         )
-        for document in documents:
-            vector_store_index.insert(document)
+        self.ingest_data(documents, type=type)
 
     def get_qdrant_vector_store_index(
         self, client: QdrantClient, collection_name: str
@@ -503,7 +521,7 @@ class RAG:
         bm25_weight = self.setting.bm25_weight
 
         index = self.get_qdrant_vector_store_index(
-            self.qdrant_client, self.setting.contextual_rag_collection_name
+            self.qdrant_client.client, self.setting.contextual_rag_collection_name
         )
 
         retriever = VectorIndexRetriever(
@@ -516,12 +534,12 @@ class RAG:
         semantic_results: Response = query_engine.query(query)
 
         semantic_doc_id = [
-            node.metadata["doc_id"] for node in semantic_results.source_nodes
+            node.metadata["document_id"] for node in semantic_results.source_nodes
         ]
 
         def get_content_by_doc_id(doc_id: str):
             for node in semantic_results.source_nodes:
-                if node.metadata["doc_id"] == doc_id:
+                if node.metadata["document_id"] == doc_id:
                     return node.text
             return ""
 

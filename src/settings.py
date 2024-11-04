@@ -5,7 +5,9 @@ from src.constants import (
     QDRANT_URL,
     BM25_WEIGHT,
     SEMANTIC_WEIGHT,
+    EMBEDDING_MODEL,
     CONTEXTUAL_MODEL,
+    EMBEDDING_SERVICE,
     ELASTIC_SEARCH_URL,
     CONTEXTUAL_SERVICE,
     NUM_CHUNKS_TO_RECALL,
@@ -40,6 +42,12 @@ class Settings(BaseModel):
     service: str = Field(description="The LLM service", default=CONTEXTUAL_SERVICE)
 
     model: str = Field(description="The LLM model", default=CONTEXTUAL_MODEL)
+
+    embed_service: str = Field(
+        description="The embedding service", default=EMBEDDING_SERVICE
+    )
+
+    embed_model: str = Field(description="The embedding model", default=EMBEDDING_MODEL)
 
     original_rag_collection_name: str = Field(
         description="The original RAG collection name",

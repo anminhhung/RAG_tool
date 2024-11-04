@@ -181,7 +181,7 @@ documents = loader.load_data(Path("sample/2409.13588v1.pdf"))
 -   **1. Contextual RAG**
 
 ```bash
-python demo/demo_contextual_rag.py --q "Cái gì thất bại đề cử di sản thế giới ?" --compare --debug
+python demo/demo_contextual_rag.py --q "ChainBuddy là gì ?" --compare --debug
 ```
 
 -   **2. ChatbotAssistant**
@@ -204,7 +204,7 @@ setting = Settings()
 
 rag = RAG(setting)
 
-q = "Cái gì thất bại đề cử di sản thế giới ?"
+q = "ChainBuddy là gì ?"
 
 print(rag.contextual_rag_search(q))
 ```
